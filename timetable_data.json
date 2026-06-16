@@ -1,0 +1,200 @@
+{
+  "active_day": "MONDAY",
+  "week": {
+    "MONDAY": {
+      "5th Floor Lecture Hall": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "2nd Floor Computer Lab": {
+        "sessions": []
+      },
+      "2nd Floor Bio-Lab": {
+        "sessions": []
+      },
+      "Basement Research Room": {
+        "sessions": []
+      }
+    },
+    "TUESDAY": {
+      "5th Floor Lecture Hall": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "2nd Floor Computer Lab": {
+        "sessions": []
+      },
+      "2nd Floor Bio-Lab": {
+        "sessions": []
+      },
+      "Basement Research Room": {
+        "sessions": []
+      }
+    },
+    "WEDNESDAY": {
+      "5th Floor Lecture Hall": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "2nd Floor Computer Lab": {
+        "sessions": []
+      },
+      "2nd Floor Bio-Lab": {
+        "sessions": []
+      },
+      "Basement Research Room": {
+        "sessions": []
+      }
+    },
+    "THURSDAY": {
+      "5th Floor Lecture Hall": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "2nd Floor Computer Lab": {
+        "sessions": []
+      },
+      "2nd Floor Bio-Lab": {
+        "sessions": []
+      },
+      "Basement Research Room": {
+        "sessions": []
+      }
+    },
+    "FRIDAY": {
+      "5th Floor Lecture Hall": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "2nd Floor Computer Lab": {
+        "sessions": []
+      },
+      "2nd Floor Bio-Lab": {
+        "sessions": []
+      },
+      "Basement Research Room": {
+        "sessions": []
+      }
+    },
+    "SATURDAY": {
+      "5th Floor Lecture Hall": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "2nd Floor Computer Lab": {
+        "sessions": []
+      },
+      "2nd Floor Bio-Lab": {
+        "sessions": []
+      },
+      "Basement Research Room": {
+        "sessions": []
+      }
+    },
+    "SUNDAY": {
+      "5th Floor Lecture Hall": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "4th Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall A": {
+        "sessions": []
+      },
+      "3rd Floor Lecture Hall B": {
+        "sessions": []
+      },
+      "2nd Floor Computer Lab": {
+        "sessions": []
+      },
+      "2nd Floor Bio-Lab": {
+        "sessions": []
+      },
+      "Basement Research Room": {
+        "sessions": []
+      }
+    }
+  },
+  "media": [
+    {
+      "id": "7505a4e8681446c3b92cea4019f4d0e1",
+      "filename": "9d12115bb5be4f28abe1d6760b63e838.jpg",
+      "original": "1.jpg",
+      "type": "image",
+      "added": "2026-06-16T11:41:39.627997"
+    }
+  ],
+  "settings": {
+    "slide_interval": 8,
+    "timetable_duration": 30
+  }
+}

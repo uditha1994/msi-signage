@@ -1,0 +1,47 @@
+{
+  "programs": [
+    "DCS 01",
+    "DCS 02",
+    "BCS 01",
+    "BCS 02",
+    "DHTM 01",
+    "DHTM 02",
+    "DBMS 01",
+    "DBMS 02",
+    "PhD Sessions",
+    "DCS 03",
+    "DCS 04",
+    "DEM 01",
+    "BEM",
+    "DBM",
+    "BIB"
+  ],
+  "subjects": [
+    "Introduction to Accounting",
+    "Introduction to Tourism",
+    "Introduction to Tour Operation",
+    "Information Technology",
+    "Organic Chemistry",
+    "Physical Chemistry",
+    "Data Structures",
+    "Object Oriented Programming",
+    "Database Management",
+    "Web Development",
+    "Research Methodology",
+    "Business Communication",
+    "Mathematics",
+    "Statistics"
+  ],
+  "lecturers": [
+    "Ms. Janani Perera",
+    "Mr. Imal Perera",
+    "Mr. Uditha Lashan",
+    "Ms. Fatema Shabbir Abbasbhoy",
+    "Ms. Upekshi Pavithra",
+    "Prof. Dr. Ali Khatibi",
+    "Mr. Kasun Silva",
+    "Ms. Dilini Fernando",
+    "Mr. Chamara Bandara",
+    "Ms. Nimesha Perera"
+  ]
+}

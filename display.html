@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MSI Campus Display</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Condensed:wght@400;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#0b1120;font-family:'Inter',sans-serif;color:#fff;overflow:hidden}
+
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;transition:opacity .8s;pointer-events:none}
+.screen.active{opacity:1;pointer-events:auto}
+
+/* ── HEADER ── */
+.hdr{
+  background:linear-gradient(90deg,#8b0000 0%,#C0272D 100%);
+  padding:6px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+  box-shadow:0 3px 14px rgba(0,0,0,.35);
+}
+.hdr-logos{display:flex;align-items:center}
+.hdr-logos img{height:52px;object-fit:contain}
+.hdr-divider{width:1px;height:40px;background:rgba(255,255,255,.3);margin:0 14px}
+.hdr-center{flex:1;text-align:center}
+.hdr-label{font-size:.72rem;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:500}
+.hdr-day{font-family:'Roboto Condensed',sans-serif;font-size:2rem;font-weight:700;color:#fff;letter-spacing:3px;line-height:1.1}
+.hdr-right{text-align:right;min-width:150px}
+.clock{font-family:'Roboto Condensed',sans-serif;font-size:2.6rem;font-weight:700;color:#fff;line-height:1;letter-spacing:2px}
+.dateline{font-size:.74rem;color:rgba(255,255,255,.7);letter-spacing:.5px;margin-top:2px}
+
+/* ── COL HEADER ── */
+.col-hdr{
+  background:linear-gradient(90deg,#C0272D,#8b0000);
+  display:grid;grid-template-columns:210px 110px 1fr 1fr 1fr;
+  flex-shrink:0;
+}
+.ch{padding:9px 14px;font-size:.7rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.ch-time{color:rgba(255,255,255,.65)}
+
+/* ── TABLE BODY ── */
+.tt-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+.venue-group{display:flex;flex-direction:column;border-bottom:1px solid rgba(255,255,255,.07)}
+.venue-group:last-child{border-bottom:none}
+
+.vg-row{
+  display:grid;grid-template-columns:210px 110px 1fr 1fr 1fr;
+  flex:1;
+}
+
+/* venue cell spans all sessions vertically */
+.venue-cell{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:8px 14px;
+  border-right:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.025);
+  grid-row:1/-1;
+}
+.v-floor{font-size:.82rem;font-weight:700;color:#7dd3fc}
+.v-hall{font-size:.72rem;color:rgba(125,211,252,.55);margin-top:1px}
+
+.sess-row{
+  display:contents;
+}
+
+.time-cell{
+  padding:6px 10px;display:flex;align-items:center;
+  border-right:1px solid rgba(255,255,255,.05);
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.time-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(192,39,45,.2);border:1px solid rgba(192,39,45,.4);
+  color:#fca5a5;padding:3px 9px;border-radius:14px;
+  font-size:.73rem;font-weight:600;white-space:nowrap;font-family:'Roboto Condensed',sans-serif;
+}
+.time-badge.active{background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5);color:#86efac}
+
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:pulse 1.4s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.data-cell{
+  padding:5px 12px;display:flex;flex-direction:column;justify-content:center;
+  border-right:1px solid rgba(255,255,255,.04);
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.data-cell:last-child{border-right:none}
+
+.prog{font-size:.7rem;font-weight:800;color:#fbbf24;letter-spacing:.3px;line-height:1}
+.subj{font-size:.85rem;font-weight:500;color:#f1f5f9;line-height:1.2;margin-top:2px}
+.lect{font-size:.75rem;color:#a78bfa;margin-top:3px}
+
+/* active session highlight */
+.sess-row.now .time-cell,
+.sess-row.now .data-cell{background:rgba(34,197,94,.07);}
+.venue-group.has-active{background:rgba(34,197,94,.03)}
+
+.empty-venue{
+  display:grid;grid-template-columns:210px 1fr;
+  padding:0;
+}
+.empty-slot{
+  padding:8px 14px;display:flex;align-items:center;
+  color:rgba(255,255,255,.12);font-size:.75rem;font-style:italic;
+  border-bottom:1px solid rgba(255,255,255,.03);
+  grid-column:2/-1;
+}
+
+/* ── FOOTER ── */
+.tt-footer{
+  background:rgba(0,0,0,.5);padding:7px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;border-top:1px solid rgba(255,255,255,.06);
+}
+.quote{font-style:italic;color:rgba(255,255,255,.3);font-size:.78rem}
+.next-info{font-size:.72rem;color:rgba(255,255,255,.2)}
+
+/* ── PROGRESS ── */
+.prog-wrap{position:fixed;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.05);z-index:999}
+.prog-bar{height:100%;background:linear-gradient(90deg,#C0272D,#fbbf24);width:0%;transition:width .5s linear}
+
+/* ── MEDIA ── */
+#media-screen{background:#000}
+.media-container{position:relative;width:100%;height:100%}
+.media-item{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .7s}
+.media-item.active{opacity:1}
+.media-item img{max-width:100%;max-height:100%;object-fit:contain}
+.media-item video{width:100%;height:100%;object-fit:contain}
+.no-media{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:rgba(255,255,255,.2);font-size:1rem}
+</style>
+</head>
+<body>
+
+<div class="screen active" id="tt-screen">
+  <div class="hdr">
+    <div class="hdr-logos">
+      <img src="/logos/msi_white.png" alt="MSI" onerror="this.style.display='none'">
+      <div class="hdr-divider"></div>
+      <img src="/logos/msu_white.png" alt="MSU" onerror="this.style.display='none'">
+    </div>
+    <div class="hdr-center">
+      <div class="hdr-label">Classroom Allocation</div>
+      <div class="hdr-day" id="day-display">TUESDAY</div>
+    </div>
+    <div class="hdr-right">
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="dateline" id="dateline"></div>
+    </div>
+  </div>
+
+  <div class="col-hdr">
+    <div class="ch">Venue</div>
+    <div class="ch ch-time">Time</div>
+    <div class="ch">Program</div>
+    <div class="ch">Subject</div>
+    <div class="ch">Lecturer</div>
+  </div>
+
+  <div class="tt-body" id="tt-body"></div>
+
+  <div class="tt-footer">
+    <div class="quote">❝ Success is a journey, not a destination ❞</div>
+    <div class="next-info" id="next-info"></div>
+  </div>
+</div>
+
+<div class="screen" id="media-screen">
+  <div class="media-container" id="media-container">
+    <div class="no-media" id="no-media"><span style="font-size:3rem">📷</span>No media uploaded yet</div>
+  </div>
+</div>
+
+<div class="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+
+<script>
+const API=window.location.origin+'/api';
+let appData=null, currentScreen='tt', mediaIdx=0, ticker=null;
+
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('en-US',{hour12:false});
+}
+setInterval(tick,1000); tick();
+
+function nowMin(){const n=new Date();return n.getHours()*60+n.getMinutes()}
+
+function parseTime(t){
+  if(!t)return null;
+  const [h,m]=(t||'').split(':').map(Number);
+  return h*60+(m||0);
+}
+
+const DAY_NAMES=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+function todayDay(){ return DAY_NAMES[new Date().getDay()]; }
+
+async function loadData(){
+  try{
+    const r=await fetch(API+'/data'); appData=await r.json();
+    const d=new Date();
+    document.getElementById('dateline').textContent=d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const today=todayDay();
+    document.getElementById('day-display').textContent=today;
+    appData._display_day=today;
+    renderTT(); renderMedia();
+  }catch(e){console.error(e)}
+}
+
+const VENUES=["5th Floor Lecture Hall","4th Floor Lecture Hall A","4th Floor Lecture Hall B",
+  "3rd Floor Lecture Hall A","3rd Floor Lecture Hall B",
+  "2nd Floor Computer Lab","2nd Floor Bio-Lab","Basement Research Room"];
+
+function renderTT(){
+  if(!appData)return;
+  const now=nowMin();
+  const body=document.getElementById('tt-body');
+  // Always show today's timetable
+  const today=appData._display_day||todayDay();
+  const rows=appData.week ? (appData.week[today]||{}) : (appData.rows||{});
+
+  body.innerHTML=VENUES.map(v=>{
+    const vd=rows[v]||{sessions:[]};
+    const sessions=vd.sessions||[];
+    const parts=v.match(/^(\d+\w*\s+Floor|Basement)\s+(.+)$/);
+    const vTop=parts?parts[1]:v; const vBot=parts?parts[2]:'';
+    const hasActive=sessions.some(s=>{
+      const st=parseTime(s.time_start), en=parseTime(s.time_end);
+      return st!=null&&en!=null&&now>=st&&now<en;
+    });
+
+    if(!sessions.length){
+      return `<div class="venue-group" style="flex:1">
+        <div class="empty-venue" style="height:100%">
+          <div class="venue-cell"><div class="v-floor">${vTop}</div><div class="v-hall">${vBot}</div></div>
+          <div class="empty-slot">— No sessions scheduled —</div>
+        </div>
+      </div>`;
+    }
+
+    const sessRows=sessions.map(s=>{
+      const st=parseTime(s.time_start), en=parseTime(s.time_end);
+      const isNow=st!=null&&en!=null&&now>=st&&now<en;
+      const timeLabel=s.time_start&&s.time_end?`${s.time_start} – ${s.time_end}`:(s.time_start||'');
+      return `<div class="sess-row${isNow?' now':''}">
+        <div class="time-cell">
+          <span class="time-badge${isNow?' active':''}">
+            ${isNow?'<span class="dot"></span>':''}${timeLabel||'—'}
+          </span>
+        </div>
+        <div class="data-cell"><span class="prog">${s.program||''}</span></div>
+        <div class="data-cell"><span class="subj">${s.subject||''}</span></div>
+        <div class="data-cell"><span class="lect">${s.lecturer||''}</span></div>
+      </div>`;
+    }).join('');
+
+    return `<div class="venue-group${hasActive?' has-active':''}" style="flex:${Math.max(1,sessions.length)}">
+      <div class="vg-row" style="grid-template-rows:repeat(${sessions.length},1fr)">
+        <div class="venue-cell" style="grid-row:1/${sessions.length+1}">
+          <div class="v-floor">${vTop}</div><div class="v-hall">${vBot}</div>
+        </div>
+        ${sessRows}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMedia(){
+  if(!appData)return;
+  const c=document.getElementById('media-container');
+  c.querySelectorAll('.media-item').forEach(el=>el.remove());
+  const nm=document.getElementById('no-media');
+  if(!appData.media?.length){nm.style.display='flex';return;}
+  nm.style.display='none';
+  appData.media.forEach((m,i)=>{
+    const d=document.createElement('div');
+    d.className='media-item'+(i===0?' active':'');
+    d.innerHTML=m.type==='video'?`<video src="/media/${m.filename}" muted autoplay loop playsinline></video>`
+      :`<img src="/media/${m.filename}" alt="${m.original}">`;
+    c.appendChild(d);
+  });
+}
+
+function showTT(){
+  currentScreen='tt';
+  document.getElementById('tt-screen').classList.add('active');
+  document.getElementById('media-screen').classList.remove('active');
+  const dur=(appData?.settings?.timetable_duration||30)*1000;
+  startProg(dur,()=>{ if(appData?.media?.length) showMedia(); else showTT(); });
+  const ni=document.getElementById('next-info');
+  if(appData?.media?.length) ni.textContent='▶ Media slideshow next';
+  else ni.textContent='';
+}
+
+function showMedia(){
+  if(!appData?.media?.length){showTT();return;}
+  currentScreen='media';
+  document.getElementById('media-screen').classList.add('active');
+  document.getElementById('tt-screen').classList.remove('active');
+  mediaIdx=0; showSlide(0);
+  const si=(appData?.settings?.slide_interval||8)*1000;
+  clearInterval(ticker);
+  ticker=setInterval(()=>{
+    mediaIdx++;
+    if(mediaIdx>=appData.media.length){clearInterval(ticker);showTT();return;}
+    showSlide(mediaIdx);
+  },si);
+  startProg(appData.media.length*si,()=>{});
+}
+
+function showSlide(i){
+  document.querySelectorAll('.media-item').forEach((el,j)=>{
+    el.classList.toggle('active',j===i);
+    const v=el.querySelector('video');
+    if(v&&j===i)v.play();
+  });
+}
+
+let progIv=null;
+function startProg(ms,cb){
+  clearInterval(progIv);
+  const fill=document.getElementById('prog-bar');
+  fill.style.width='0%';
+  const start=Date.now();
+  const ni=document.getElementById('next-info');
+  progIv=setInterval(()=>{
+    const el=Date.now()-start;
+    fill.style.width=Math.min(100,(el/ms)*100)+'%';
+    if(currentScreen==='tt'&&appData?.media?.length){
+      ni.textContent=`▶ Media in ${Math.max(0,Math.ceil((ms-el)/1000))}s`;
+    }
+    if(el>=ms){clearInterval(progIv);fill.style.width='0%';cb();}
+  },500);
+}
+
+// Refresh every 60s; re-highlight every 30s
+setInterval(()=>loadData(),60000);
+setInterval(()=>{if(currentScreen==='tt')renderTT();},30000);
+
+loadData().then(()=>setTimeout(()=>showTT(),600));
+</script>
+</body>
+</html>

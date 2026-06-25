@@ -12,75 +12,180 @@ html,body{width:100%;height:100%;background:#0a0f1a;font-family:'Inter',sans-ser
 .screen.active{opacity:1;pointer-events:auto}
 
 /* ── HEADER ── */
-.hdr{background:linear-gradient(90deg,#8b0000 0%,#C0272D 100%);padding:6px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 3px 14px rgba(0,0,0,.35)}
+.hdr{background:linear-gradient(90deg,#8b0000 0%,#C0272D 100%);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 3px 14px rgba(0,0,0,.35)}
 .hdr-logos{display:flex;align-items:center}
-.hdr-logos img{height:50px;object-fit:contain}
-.hdr-divider{width:1px;height:40px;background:rgba(255,255,255,.3);margin:0 14px}
+.hdr-logos img{height:54px;object-fit:contain}
+.hdr-divider{width:1px;height:44px;background:rgba(255,255,255,.3);margin:0 16px}
 .hdr-center{flex:1;text-align:center}
-.hdr-label{font-size:.72rem;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:500}
-.hdr-day{font-family:'Roboto Condensed',sans-serif;font-size:1.9rem;font-weight:700;color:#fff;letter-spacing:3px;line-height:1.1}
-.hdr-right{text-align:right;min-width:150px}
-.clock{font-family:'Roboto Condensed',sans-serif;font-size:2.4rem;font-weight:700;color:#fff;line-height:1;letter-spacing:2px}
-.dateline{font-size:.74rem;color:rgba(255,255,255,.7);letter-spacing:.5px;margin-top:2px}
+.hdr-label{font-size:.78rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:500}
+.hdr-day{font-family:'Roboto Condensed',sans-serif;font-size:2.2rem;font-weight:700;color:#fff;letter-spacing:4px;line-height:1.1}
+.hdr-right{text-align:right;min-width:170px}
+.clock{font-family:'Roboto Condensed',sans-serif;font-size:2.7rem;font-weight:700;color:#fff;line-height:1;letter-spacing:2px}
+.dateline{font-size:.82rem;color:rgba(255,255,255,.7);letter-spacing:.5px;margin-top:3px}
 
 /* ── TIMETABLE SCREEN ── */
 #tt-screen{background:linear-gradient(160deg,#0a0f1a 0%,#16213e 60%,#0d1520 100%)}
 
-.tt-body{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:18px 32px 8px;position:relative}
+.tt-body{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:22px 38px 14px;position:relative;min-height:0}
 
 /* Floor heading */
-.floor-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}
-.floor-head-left{display:flex;flex-direction:column}
-.floor-name{font-size:.78rem;letter-spacing:2.5px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:500}
-.session-label{font-family:'Roboto Condensed',sans-serif;font-size:1.9rem;font-weight:600;color:#fcd34d;letter-spacing:1.5px;line-height:1.05;margin-top:2px}
-.floor-meta{font-size:.78rem;color:rgba(255,255,255,.45);text-align:right}
+.floor-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}
+.floor-name{font-size:.92rem;letter-spacing:3px;color:rgba(255,255,255,.55);text-transform:uppercase;font-weight:500}
+.session-label{font-family:'Roboto Condensed',sans-serif;font-size:2.3rem;font-weight:600;color:#fcd34d;letter-spacing:1.5px;line-height:1.05;margin-top:3px}
+.floor-meta{font-size:.88rem;color:rgba(255,255,255,.45);text-align:right}
 
-/* Carousel container - cards animate in here */
-.carousel{flex:1;display:grid;grid-template-columns:repeat(2,1fr);gap:22px;align-content:start;overflow:hidden;position:relative}
-.carousel.cols-1{grid-template-columns:minmax(0,560px);justify-content:center}
-.carousel.cols-3{grid-template-columns:repeat(3,1fr)}
+/* Carousel — vertically stacks up to 2 cards, full height usage */
+.carousel{flex:1;display:grid;gap:18px;min-height:0;overflow:hidden}
+.carousel.rows-1{grid-template-rows:1fr}
+.carousel.rows-2{grid-template-rows:1fr 1fr}
 
-/* CARDS */
-.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:22px 22px 18px;position:relative;display:flex;flex-direction:column;align-items:center;animation:cardIn .7s cubic-bezier(.22,1,.36,1) both;backdrop-filter:blur(6px)}
-@keyframes cardIn{from{opacity:0;transform:translateY(40px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
-.card.live{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35);box-shadow:0 0 0 1px rgba(34,197,94,.2),0 10px 32px rgba(34,197,94,.12)}
+/* ── HORIZONTAL CARDS (photo left, content right) ── */
+.card{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:22px;
+  display:flex;
+  overflow:hidden;
+  position:relative;
+  animation:cardIn .6s cubic-bezier(.22,1,.36,1) both;
+  min-height:0;
+}
+@keyframes cardIn{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
 
-.live-badge{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px;background:rgba(34,197,94,.2);padding:4px 10px;border-radius:14px;border:1px solid rgba(34,197,94,.4)}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse 1.4s infinite}
-@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px #22c55e}50%{opacity:.4;box-shadow:0 0 2px #22c55e}}
-.live-text{font-size:.66rem;color:#86efac;font-weight:600;letter-spacing:1.2px}
+.card.live{
+  background:rgba(34,197,94,.07);
+  border-color:rgba(34,197,94,.4);
+  box-shadow:0 0 0 1px rgba(34,197,94,.2),0 10px 32px rgba(34,197,94,.15);
+}
 
-/* Profile photo - big */
-.photo-wrap{display:flex;justify-content:center;margin-bottom:14px;margin-top:4px}
-.photo{width:118px;height:118px;border-radius:50%;object-fit:cover;border:3px solid rgba(192,39,45,.55);background:#1f2937}
-.card.live .photo{border-color:#22c55e;box-shadow:0 0 24px rgba(34,197,94,.3)}
-.photo-ph{width:118px;height:118px;border-radius:50%;background:linear-gradient(135deg,#374151,#1f2937);border:3px solid rgba(192,39,45,.55);display:flex;align-items:center;justify-content:center;font-size:3.2rem;color:rgba(255,255,255,.4)}
-.card.live .photo-ph{border-color:#22c55e}
+.live-badge{
+  position:absolute;top:18px;right:18px;
+  display:flex;align-items:center;gap:7px;
+  background:rgba(34,197,94,.22);
+  padding:6px 13px;border-radius:16px;
+  border:1px solid rgba(34,197,94,.45);
+  z-index:5;
+}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 10px #22c55e}50%{opacity:.4;box-shadow:0 0 2px #22c55e}}
+.live-text{font-size:.78rem;color:#86efac;font-weight:700;letter-spacing:1.8px}
 
-.card-body{text-align:center;width:100%}
-.prog-tag{display:inline-block;font-size:.7rem;letter-spacing:1.8px;color:#fbbf24;font-weight:700;text-transform:uppercase;padding:3px 10px;border:1px solid rgba(251,191,36,.3);border-radius:12px;margin-bottom:8px;background:rgba(251,191,36,.06)}
-.module-name{font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:600;color:#fff;line-height:1.25;margin-bottom:5px}
-.lesson{font-size:.85rem;color:#7dd3fc;font-style:italic;line-height:1.3;margin-bottom:10px;min-height:1.1rem}
-.lecturer{font-size:.88rem;color:#c4b5fd;font-weight:500;margin-bottom:14px}
+/* Square photo with rounded corners - LEFT side, large */
+.photo-wrap{
+  width:34%;
+  min-width:240px;
+  max-width:340px;
+  flex-shrink:0;
+  background:#1f2937;
+  border-right:1px solid rgba(255,255,255,.08);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+.card.live .photo-wrap{border-right-color:rgba(34,197,94,.25)}
+.photo{
+  width:78%;
+  aspect-ratio:1/1;
+  object-fit:cover;
+  border-radius:24px;
+  background:#1f2937;
+}
+.photo-ph{
+  width:78%;
+  aspect-ratio:1/1;
+  border-radius:24px;
+  background:linear-gradient(135deg,#374151,#1f2937);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:5rem;
+  color:rgba(255,255,255,.35);
+}
 
-.card-footer{padding-top:11px;border-top:1px solid rgba(255,255,255,.07);font-size:.78rem;color:rgba(255,255,255,.55);letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center;width:100%}
-.card.live .card-footer{border-top-color:rgba(34,197,94,.15);color:#86efac}
+/* Content RIGHT side - bigger fonts */
+.card-content{
+  flex:1;
+  padding:28px 34px 22px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-width:0;
+}
+.card-top{display:flex;flex-direction:column;gap:6px}
+
+.prog-tag{
+  display:inline-block;
+  font-size:.95rem;
+  letter-spacing:2.2px;
+  color:#fbbf24;
+  font-weight:700;
+  text-transform:uppercase;
+  padding:5px 14px;
+  border:1px solid rgba(251,191,36,.35);
+  border-radius:16px;
+  background:rgba(251,191,36,.07);
+  align-self:flex-start;
+  margin-bottom:6px;
+}
+
+.module-name{
+  font-size:2.1rem;
+  font-weight:600;
+  color:#fff;
+  line-height:1.2;
+  letter-spacing:-.3px;
+  margin-bottom:4px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.lesson{
+  font-size:1.25rem;
+  color:#7dd3fc;
+  font-style:italic;
+  line-height:1.3;
+  font-weight:300;
+  margin-bottom:14px;
+}
+
+.lecturer{
+  font-size:1.35rem;
+  color:#c4b5fd;
+  font-weight:500;
+  letter-spacing:.2px;
+  margin-bottom:8px;
+}
+
+.card-footer{
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.08);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:1rem;
+  color:rgba(255,255,255,.6);
+  letter-spacing:.4px;
+}
+.card.live .card-footer{border-top-color:rgba(34,197,94,.18);color:#86efac}
 .venue-sub{font-weight:500}
-.time-sub{font-family:'Roboto Condensed',sans-serif;font-weight:600;letter-spacing:1px}
+.time-sub{font-family:'Roboto Condensed',sans-serif;font-weight:700;letter-spacing:1.5px;font-size:1.1rem}
 
 /* Empty state */
-.empty-floor{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.25);gap:14px}
-.empty-floor .ico{font-size:3.5rem}
-.empty-floor .msg{font-size:1rem}
+.empty-floor{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.25);gap:16px}
+.empty-floor .ico{font-size:4rem}
+.empty-floor .msg{font-size:1.1rem}
 
 /* Pagination dots */
-.dots{display:flex;justify-content:center;gap:6px;padding:14px 0 12px}
-.dot{width:22px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);transition:all .4s}
-.dot.active{background:#C0272D;width:36px}
+.dots{display:flex;justify-content:center;gap:7px;padding:14px 0 6px;flex-shrink:0}
+.dot{width:26px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:all .4s}
+.dot.active{background:#C0272D;width:42px}
 .dot.has-data{background:rgba(255,255,255,.32)}
 
 /* Footer line */
-.tt-footer{padding:6px 28px 8px;display:flex;justify-content:space-between;align-items:center;font-size:.74rem;color:rgba(255,255,255,.32);border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);flex-shrink:0}
+.tt-footer{padding:7px 32px;display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:rgba(255,255,255,.34);border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);flex-shrink:0}
 .quote{font-style:italic}
 
 /* Progress bar */
@@ -111,7 +216,6 @@ html,body{width:100%;height:100%;background:#0a0f1a;font-family:'Inter',sans-ser
 </head>
 <body>
 
-<!-- ── TIMETABLE SCREEN ── -->
 <div class="screen active" id="tt-screen">
   <div class="hdr">
     <div class="hdr-logos">
@@ -131,7 +235,7 @@ html,body{width:100%;height:100%;background:#0a0f1a;font-family:'Inter',sans-ser
 
   <div class="tt-body">
     <div class="floor-head">
-      <div class="floor-head-left">
+      <div>
         <div class="floor-name" id="floor-name">Floor</div>
         <div class="session-label" id="session-label">Sessions</div>
       </div>
@@ -149,14 +253,12 @@ html,body{width:100%;height:100%;background:#0a0f1a;font-family:'Inter',sans-ser
   </div>
 </div>
 
-<!-- ── MEDIA SCREEN ── -->
 <div class="screen" id="media-screen">
   <div class="media-container" id="media-container">
     <div class="no-media" id="no-media"><span style="font-size:3rem">📷</span>No media uploaded yet</div>
   </div>
 </div>
 
-<!-- ── MEETING SCREEN ── -->
 <div class="screen" id="meeting-screen">
   <div class="mtg-wrap">
     <div class="mtg-badge">📢 SPECIAL MEETING</div>
@@ -181,7 +283,6 @@ const VENUES=["5th Floor Lecture Hall","4th Floor Lecture Hall A","4th Floor Lec
   "2nd Floor Computer Lab","2nd Floor Bio-Lab","Basement Research Room"];
 const DAY_NAMES=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
 
-// Floor groupings - aggregate venues per floor
 const FLOORS=[
   {name:'5th Floor',venues:['5th Floor Lecture Hall']},
   {name:'4th Floor',venues:['4th Floor Lecture Hall A','4th Floor Lecture Hall B']},
@@ -190,17 +291,17 @@ const FLOORS=[
   {name:'Basement',venues:['Basement Research Room']}
 ];
 
+const CARDS_PER_SLIDE=2;  // Max 2 cards stacked vertically per slide
+
 let appData=null;
 let lecturers=[];
 let currentScreen='tt';
 let meetingActive=false, mtgTicker=null;
 let mediaIdx=0, mediaTicker=null;
-let slideIdx=0;          // current slide index in the slides array
-let slides=[];           // [{floor, session, venueName, cards:[{...sessionData}]}]
+let slideIdx=0;
+let slides=[];
 let slideTicker=null;
-let progIv=null;
 
-// Clock
 function tick(){
   document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});
 }
@@ -209,10 +310,8 @@ setInterval(tick,1000); tick();
 function todayDay(){ return DAY_NAMES[new Date().getDay()]; }
 function nowMin(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
 function parseTime(t){ if(!t)return null; const[h,m]=(t||'').split(':').map(Number); return h*60+(m||0); }
-
 function lecturerByName(name){ return name?lecturers.find(l=>l.name===name)||null:null; }
 
-// ── Load data ──────────────────────────────────────────────
 async function loadData(){
   try{
     const [dr,lr]=await Promise.all([fetch(API+'/data'),fetch(API+'/lecturers')]);
@@ -232,46 +331,43 @@ async function loadData(){
   }catch(e){console.error(e)}
 }
 
-// ── Build slides from current day's data ──────────────────
 function buildSlides(){
   const today=appData._display_day||todayDay();
   const rows=appData.week?(appData.week[today]||{}):(appData.rows||{});
 
   slides=[];
-  // For each floor, build morning and evening slides
   FLOORS.forEach(floor=>{
-    // Collect all sessions across the floor's venues
     const allSessions=[];
     floor.venues.forEach(v=>{
       const vs=rows[v]?.sessions||[];
       vs.forEach(s=>allSessions.push({...s,_venue:v}));
     });
     if(!allSessions.length) return;
-    // Split into morning (< 12:00) and evening (>= 12:00)
+
     const morning=allSessions.filter(s=>{const t=parseTime(s.time_start); return t!=null&&t<12*60;});
     const evening=allSessions.filter(s=>{const t=parseTime(s.time_start); return t!=null&&t>=12*60;});
-    // Sort by time
     morning.sort((a,b)=>parseTime(a.time_start)-parseTime(b.time_start));
     evening.sort((a,b)=>parseTime(a.time_start)-parseTime(b.time_start));
-    if(morning.length) slides.push({floor:floor.name,session:'Morning Sessions',cards:morning});
-    if(evening.length) slides.push({floor:floor.name,session:'Evening Sessions',cards:evening});
+
+    // Split each session group into chunks of CARDS_PER_SLIDE (2)
+    const chunk=(arr,n)=>{const r=[];for(let i=0;i<arr.length;i+=n)r.push(arr.slice(i,i+n));return r;};
+    chunk(morning,CARDS_PER_SLIDE).forEach(cards=>slides.push({floor:floor.name,session:'Morning Sessions',cards}));
+    chunk(evening,CARDS_PER_SLIDE).forEach(cards=>slides.push({floor:floor.name,session:'Evening Sessions',cards}));
   });
 
-  // Reset to first slide
   slideIdx=0;
   if(currentScreen==='tt') startSlideRotation();
 }
 
-// ── Render one slide ──────────────────────────────────────
 function renderSlide(){
   const carousel=document.getElementById('carousel');
   const dotsBox=document.getElementById('dots');
 
-  // Floor header + dots: handle empty timetable
   if(!slides.length){
     document.getElementById('floor-name').textContent='Today';
     document.getElementById('session-label').textContent='No Sessions Scheduled';
     document.getElementById('floor-meta').textContent='';
+    carousel.className='carousel rows-1';
     carousel.innerHTML=`<div class="empty-floor"><div class="ico">📅</div><div class="msg">No sessions scheduled for today</div></div>`;
     dotsBox.innerHTML='';
     return;
@@ -282,10 +378,8 @@ function renderSlide(){
   document.getElementById('session-label').textContent=slide.session;
   document.getElementById('floor-meta').textContent=`Slide ${slideIdx+1} of ${slides.length} · ${appData._display_day}`;
 
-  // Adjust grid columns based on card count
-  carousel.className='carousel';
-  if(slide.cards.length===1) carousel.classList.add('cols-1');
-  else if(slide.cards.length>=3) carousel.classList.add('cols-3');
+  // Vertical stack: 1 or 2 rows
+  carousel.className='carousel rows-'+slide.cards.length;
 
   const now=nowMin();
   carousel.innerHTML=slide.cards.map(s=>{
@@ -296,41 +390,39 @@ function renderSlide(){
       ? `<img class="photo" src="/profiles/${lec.image}" onerror="this.outerHTML='&lt;div class=&quot;photo-ph&quot;&gt;👤&lt;/div&gt;'">`
       : `<div class="photo-ph">👤</div>`;
     const timeLbl=s.time_start&&s.time_end?`${s.time_start} – ${s.time_end}`:(s.time_start||'');
-    // Venue label - strip the floor prefix to save space (e.g. "3rd Floor Lecture Hall A" -> "Lecture Hall A")
     const venueShort=(s._venue||'').replace(/^(\d+\w*\s+Floor|Basement)\s+/,'')||s._venue||'';
 
     return `<div class="card${isLive?' live':''}">
       ${isLive?`<div class="live-badge"><span class="live-dot"></span><span class="live-text">LIVE</span></div>`:''}
       <div class="photo-wrap">${photo}</div>
-      <div class="card-body">
-        ${s.program?`<div class="prog-tag">${escHtml(s.program)}</div>`:''}
-        <div class="module-name">${escHtml(s.subject||'Session')}</div>
-        ${s.lesson?`<div class="lesson">▸ ${escHtml(s.lesson)}</div>`:'<div class="lesson"></div>'}
-        <div class="lecturer">${escHtml(s.lecturer||'')}</div>
-      </div>
-      <div class="card-footer">
-        <span class="venue-sub">${escHtml(venueShort)}</span>
-        <span class="time-sub">${timeLbl}</span>
+      <div class="card-content">
+        <div class="card-top">
+          ${s.program?`<div class="prog-tag">${escHtml(s.program)}</div>`:''}
+          <div class="module-name">${escHtml(s.subject||'Session')}</div>
+          ${s.lesson?`<div class="lesson">▸ ${escHtml(s.lesson)}</div>`:''}
+          <div class="lecturer">${escHtml(s.lecturer||'')}</div>
+        </div>
+        <div class="card-footer">
+          <span class="venue-sub">${escHtml(venueShort)}</span>
+          <span class="time-sub">${timeLbl}</span>
+        </div>
       </div>
     </div>`;
   }).join('');
 
-  // Dots - one per slide
   dotsBox.innerHTML=slides.map((_,i)=>`<div class="dot${i===slideIdx?' active':' has-data'}"></div>`).join('');
 }
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-// ── Slide rotation ────────────────────────────────────────
 function startSlideRotation(){
   clearInterval(slideTicker);
   renderSlide();
   if(slides.length<=1) return;
-  const slideDur=(appData?.settings?.slide_per_floor||7)*1000;  // 7s per slide default
+  const slideDur=(appData?.settings?.slide_per_floor||8)*1000;
   slideTicker=setInterval(()=>{
     slideIdx=(slideIdx+1)%slides.length;
     renderSlide();
-    // After completing a full carousel cycle, switch to media (if any)
     if(slideIdx===0 && appData?.media?.length){
       clearInterval(slideTicker);
       setTimeout(()=>showMedia(),400);
@@ -338,7 +430,6 @@ function startSlideRotation(){
   },slideDur);
 }
 
-// ── Media slideshow ───────────────────────────────────────
 function renderMedia(){
   if(!appData)return;
   const c=document.getElementById('media-container');
@@ -355,7 +446,6 @@ function renderMedia(){
   });
 }
 
-// ── Screen switching ──────────────────────────────────────
 function showTT(){
   if(meetingActive)return;
   currentScreen='tt';
@@ -392,7 +482,6 @@ function showMediaSlide(i){
   });
 }
 
-// ── Special meeting ───────────────────────────────────────
 function showMeeting(m){
   const scr=document.getElementById('meeting-screen');
   document.getElementById('tt-screen').classList.remove('active');
@@ -434,7 +523,6 @@ function hideMeeting(){
   document.getElementById('meeting-screen').classList.remove('active');
 }
 
-// ── Fullscreen ────────────────────────────────────────────
 function goFullscreen(){
   const el=document.documentElement;
   const fn=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
@@ -453,7 +541,6 @@ document.addEventListener('click',()=>{
   const f=document.getElementById('fs-prompt'); if(f) f.style.display='none';
 });
 
-// Refresh every 60s; re-render slide every 20s for live highlight
 setInterval(()=>loadData(),60000);
 setInterval(()=>{if(currentScreen==='tt'&&!meetingActive)renderSlide();},20000);
 

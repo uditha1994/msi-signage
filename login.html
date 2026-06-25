@@ -75,45 +75,35 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// ════════════════════════════════════════════════════════════
-//  PASTE YOUR FIREBASE CONFIG HERE
-//  Get it from: Firebase Console → Project Settings → Your apps → Web app
-// ════════════════════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  projectId: "PASTE_YOUR_PROJECT_ID",
-  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
-};
-// ════════════════════════════════════════════════════════════
-
-const notConfigured = firebaseConfig.apiKey === "PASTE_YOUR_API_KEY";
-
 const errEl = document.getElementById('error-msg');
 const btn   = document.getElementById('login-btn');
-
-if (notConfigured) {
-  document.getElementById('config-warn').classList.add('show');
-}
-
 let auth = null;
-if (!notConfigured) {
-  const app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  // Already logged in? go to admin
-  onAuthStateChanged(auth, (user) => {
-    if (user) window.location.href = '/';
-  });
+let configReady = false;
+
+// Fetch Firebase config from server (.env)
+try {
+  const r = await fetch('/api/firebase-config');
+  const d = await r.json();
+  if (d.configured && d.config) {
+    const app  = initializeApp(d.config);
+    auth = getAuth(app);
+    configReady = true;
+    onAuthStateChanged(auth, (user) => {
+      if (user) window.location.href = '/';
+    });
+  } else {
+    document.getElementById('config-warn').classList.add('show');
+  }
+} catch(e) {
+  document.getElementById('config-warn').classList.add('show');
 }
 
 function showErr(msg){ errEl.textContent = msg; errEl.classList.add('show'); }
 
 window.doLogin = async function(){
   errEl.classList.remove('show');
-  if (notConfigured){
-    showErr('Firebase is not configured yet. See the setup guide.');
+  if (!configReady){
+    showErr('Firebase is not configured yet. See FIREBASE_SETUP.md.');
     return;
   }
   const email = document.getElementById('email').value.trim();

@@ -1,0 +1,29 @@
+# Restricted config - never commit
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Data files (user-generated)
+timetable_data.json
+presets.json
+templates_data.json
+catalog.json
+lecturers.json
+meeting.json
+
+# Uploaded media (user content)
+public/media/*
+public/profiles/*
+public/meeting/*
+!public/media/.gitkeep
+!public/profiles/.gitkeep
+!public/meeting/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -4,6 +4,17 @@ import json, os, uuid, socket
 from datetime import datetime
 from werkzeug.utils import secure_filename
 
+# ── Load .env (Firebase config + other secrets) ─────────────
+def load_env_file(path='.env'):
+    if not os.path.exists(path): return
+    with open(path) as f:
+        for line in f:
+            line=line.strip()
+            if not line or line.startswith('#') or '=' not in line: continue
+            k,v=line.split('=',1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+load_env_file()
+
 app = Flask(__name__, static_folder='public')
 CORS(app)
 
@@ -112,6 +123,19 @@ def get_data():
 def network_info():
     ip = get_local_ip()
     return jsonify({'ip': ip, 'admin': f'http://{ip}:5000', 'display': f'http://{ip}:5000/display'})
+
+@app.route('/api/firebase-config')
+def firebase_config():
+    cfg = {
+        'apiKey':            os.environ.get('FIREBASE_API_KEY',''),
+        'authDomain':        os.environ.get('FIREBASE_AUTH_DOMAIN',''),
+        'projectId':         os.environ.get('FIREBASE_PROJECT_ID',''),
+        'storageBucket':     os.environ.get('FIREBASE_STORAGE_BUCKET',''),
+        'messagingSenderId': os.environ.get('FIREBASE_MESSAGING_SENDER_ID',''),
+        'appId':             os.environ.get('FIREBASE_APP_ID',''),
+    }
+    configured = bool(cfg['apiKey']) and cfg['apiKey'] != 'PASTE_YOUR_API_KEY'
+    return jsonify({'configured': configured, 'config': cfg if configured else None})
 
 # ── Presets ──────────────────────────────────────────────────
 @app.route('/api/presets')

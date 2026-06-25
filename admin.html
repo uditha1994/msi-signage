@@ -5,50 +5,41 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MSI Signage Admin</title>
 <script type="module">
-// ════════════════════════════════════════════════════════════
-//  FIREBASE AUTH GUARD — protects the admin panel
-//  PASTE THE SAME firebaseConfig you used in login.html
-// ════════════════════════════════════════════════════════════
+// Firebase auth guard — config loaded from server /.env
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  projectId: "PASTE_YOUR_PROJECT_ID",
-  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
-};
-// ════════════════════════════════════════════════════════════
-
-const notConfigured = firebaseConfig.apiKey === "PASTE_YOUR_API_KEY";
-
-if (!notConfigured) {
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  // Block page until auth confirmed
-  document.documentElement.style.visibility = 'hidden';
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      document.documentElement.style.visibility = 'visible';
-      const el = document.getElementById('user-email');
-      if (el) el.textContent = user.email;
-    } else {
+try {
+  const r = await fetch('/api/firebase-config');
+  const d = await r.json();
+  if (d.configured && d.config) {
+    const app  = initializeApp(d.config);
+    const auth = getAuth(app);
+    // Hide page until auth confirmed
+    document.documentElement.style.visibility = 'hidden';
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.documentElement.style.visibility = 'visible';
+        const el = document.getElementById('user-email');
+        if (el) el.textContent = user.email;
+      } else {
+        window.location.href = '/login';
+      }
+    });
+    window.doLogout = async function(){
+      await signOut(auth);
       window.location.href = '/login';
-    }
-  });
-  window.doLogout = async function(){
-    await signOut(auth);
-    window.location.href = '/login';
-  };
-} else {
-  // Not configured — allow access but warn (so setup is still possible)
-  window.doLogout = function(){
-    alert('Firebase is not configured yet. Auth is disabled.\nSee FIREBASE_SETUP.md');
-  };
-  console.warn('Firebase not configured — admin panel is unprotected. See FIREBASE_SETUP.md');
+    };
+  } else {
+    window.doLogout = function(){
+      alert('Firebase is not configured yet. Auth is disabled.\nSee FIREBASE_SETUP.md');
+    };
+    console.warn('Firebase not configured — admin panel is unprotected. See FIREBASE_SETUP.md');
+  }
+} catch(e) {
+  console.error('Could not fetch Firebase config:', e);
+  window.doLogout = function(){ alert('Server connection error.'); };
 }
 </script>
 <style>

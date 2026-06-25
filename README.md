@@ -1,20 +1,82 @@
 # MSI Campus Digital Signage System
 
-A local network digital signage system for **Management & Science Institute (MSI)** campus. Displays the daily classroom timetable on a Smart TV, with support for event photo/video slideshows.
+A local-network digital signage system for **Management & Science Institute (MSI)**. Shows the daily classroom timetable on a Smart TV, with lecturer photos, lesson details, event slideshows, and a special meeting mode.
 
-Built with Python (Flask) for the backend and plain HTML/JS for the frontend — no internet required after setup.
+Backend: Python (Flask). Frontend: plain HTML/JS. Login: Firebase Authentication.
 
 ---
 
 ## Features
 
-- **Weekly timetable** — enter sessions for each day (Mon–Sun) per venue
-- **Auto day detection** — TV display automatically shows today's timetable
-- **Live clock** — current time shown on screen, with green highlight on the active session
-- **Media slideshow** — upload photos or videos for events; plays between timetable views
-- **Weekly templates** — save the full week as a named template and reload it any week
-- **Autocomplete** — program, subject, and lecturer fields suggest from a saved preset list
-- **Network access** — admin panel and TV display both accessible from any device on the same WiFi
+- **Login protection** — admin panel secured with Firebase email/password auth
+- **Weekly timetable** — separate schedule for each day (Mon–Sun)
+- **Auto day detection** — TV automatically shows today's timetable
+- **Program → Module → Lesson** — pick the program, then its module, then the day's lesson
+- **Lecturer profiles** — add lecturers with photos; photos show on the TV timetable
+- **Excel import** — bulk-load programs, modules, lessons, and lecturers from a spreadsheet
+- **Special Meeting mode** — replace the whole display with a meeting screen (title, message, photos/videos), then switch back to normal
+- **Media slideshow** — event photos/videos play between timetable views
+- **Weekly templates** — save the full week and reload it any time
+- **Auto fullscreen** — display goes fullscreen (tap once if the browser blocks it)
+- **Network access** — open the TV display on any device on the same WiFi
+
+---
+
+## Quick Start
+
+1. **Install Python 3.10+** from https://www.python.org/downloads/ (check "Add Python to PATH")
+2. **Install dependencies:**
+   ```
+   pip install -r requirements.txt
+   ```
+3. **Set up Firebase login** — follow `FIREBASE_SETUP.md` (about 5 minutes)
+4. **Start the server:**
+   - Windows: double-click `START_AS_ADMIN.bat`
+   - Mac/Linux: `./start_server.sh` (or `python3 server.py`)
+5. The admin login page opens at `http://localhost:5000`
+
+---
+
+## Using the Admin Panel
+
+| Tab | What it does |
+|-----|--------------|
+| **📋 Weekly Timetable** | Edit each day's sessions. Pick venue → add session → choose program, module, lesson, lecturer, and times. Save each day. |
+| **📚 Programs & Lessons** | Manage the program/module/lesson catalog. Import everything from Excel. |
+| **👤 Lecturers** | Add lecturers and upload profile photos. |
+| **📢 Special Meeting** | Create a meeting screen and show it on the TV. Stop it to return to normal. |
+| **📁 Templates** | Save/load the full week as a named template. |
+| **🖼️ Photos & Videos** | Upload event media for the slideshow. |
+| **⚙️ Settings** | Set how long the timetable and each slide stay on screen. |
+
+---
+
+## Excel Import Format
+
+Create a spreadsheet with these columns (one sheet named anything):
+
+| Program | Module | Code | Lesson | Lecturer |
+|---------|--------|------|--------|----------|
+| DCS 01 | Object Oriented Programming | CCS20704 | Introduction to OOP | Mr. Uditha Lashan |
+| DCS 01 | Object Oriented Programming | CCS20704 | Classes and Objects | Mr. Uditha Lashan |
+| DCS 01 | Database Management | CCS20203 | ER Diagrams | Ms. Dilini Fernando |
+
+Repeat the program/module on each row. Use the **⬇ Sample Format** button in the app to download a starter file.
+
+Advanced: you can also use separate sheets named `Programs`, `Modules`, `Lessons`, `Lecturers`.
+
+---
+
+## The TV Display
+
+Open `http://[PC-IP]:5000/display` on the Smart TV browser (find the IP in the admin panel's top banner, or run `ipconfig` on Windows / `ipconfig getifaddr en0` on Mac).
+
+- Shows today's timetable automatically
+- Active session highlighted in green with a live indicator
+- Lecturer photos shown next to names
+- Switches to the media slideshow when event media is uploaded
+- Shows the meeting screen instead when meeting mode is on
+- Goes fullscreen automatically (tap once if prompted)
 
 ---
 
@@ -22,180 +84,37 @@ Built with Python (Flask) for the backend and plain HTML/JS for the frontend —
 
 ```
 msi-signage/
-├── server.py            # Flask backend — API + file serving
-├── admin.html           # Admin panel — edit timetable, upload media, manage templates
-├── display.html         # TV display — full-screen timetable + media slideshow
+├── server.py            # Flask backend
+├── login.html           # Firebase login page
+├── admin.html           # Admin panel (protected)
+├── display.html         # TV display
 ├── requirements.txt     # Python dependencies
-├── START_SERVER.bat     # One-click start for Windows
-├── START_AS_ADMIN.bat   # Same, but requests admin rights (needed for firewall)
+├── FIREBASE_SETUP.md    # Auth setup guide
+├── START_SERVER.bat     # Windows launcher
+├── START_AS_ADMIN.bat   # Windows launcher (admin, opens firewall)
+├── start_server.sh      # Mac/Linux launcher
 └── public/
-    ├── msi_white.png    # MSI logo (white, for dark header)
-    ├── msu_white.png    # MSU logo (white, for dark header)
-    └── media/           # Uploaded photos and videos (auto-created)
+    ├── msi_white.png / msu_white.png   # logos for dark headers
+    ├── msi_black.png / msu_black.png   # logos for login page
+    ├── media/           # event slideshow files
+    ├── profiles/        # lecturer photos
+    └── meeting/         # special meeting media
 ```
 
-Data files are created automatically on first run:
-- `timetable_data.json` — current week's schedule
-- `presets.json` — autocomplete lists for programs, subjects, lecturers
-- `templates_data.json` — saved weekly templates
-
----
-
-## Requirements
-
-- **Python 3.10+** — [python.org](https://www.python.org/downloads/)
-- **Windows** (tested) — also works on Mac/Linux with minor adjustments
-- Smart TV or Chromecast on the same WiFi network as the PC running the server
-
----
-
-## Setup
-
-**1. Install Python**
-
-Download from [python.org](https://www.python.org/downloads/) and install. During installation, check **"Add Python to PATH"**.
-
-**2. Install dependencies**
-
-Open a terminal in the project folder and run:
-
-```bash
-pip install -r requirements.txt
-```
-
-**3. Start the server**
-
-On Windows, double-click `START_AS_ADMIN.bat` (runs as administrator so the firewall rule is added automatically).
-
-Or run manually:
-
-```bash
-python server.py
-```
-
-The terminal will show:
-
-```
-Admin Panel  : http://localhost:5000
-TV Display   : http://192.168.x.x:5000/display
-```
-
-The admin panel opens automatically in your browser.
-
----
-
-## Usage
-
-### Admin Panel — `http://localhost:5000`
-
-**Weekly Timetable tab**
-- Click a day (Mon–Sun) to switch to that day
-- Click **+ Add Session** on any venue row to add a lecture slot
-- Enter start time, end time, program, subject, and lecturer
-- Fields show autocomplete suggestions as you type
-- Click **💾 Save Day** when done
-
-**Templates tab**
-- Enter a name and click **💾 Save Full Week** to save all 7 days as a template
-- Load a saved template any week with **⬇ Load**
-- Useful when the weekly schedule repeats
-
-**Photos & Videos tab**
-- Drag and drop or click to upload images or videos
-- Supported formats: JPG, PNG, GIF, MP4, WEBM, MOV
-- Uploaded files play as a slideshow on the TV between timetable views
-
-**Presets tab**
-- Manage the autocomplete lists for programs, subjects, and lecturers
-- New values typed in the timetable are saved to presets automatically
-
-**Settings tab**
-- Set how long the timetable stays on screen before switching to media (default: 30 seconds)
-- Set how long each photo/video shows (default: 8 seconds)
-
----
-
-### TV Display — `http://[PC-IP]:5000/display`
-
-Open this URL on the Smart TV browser or cast it via Chromecast.
-
-- Automatically detects today's day and shows that day's timetable
-- Currently active session is highlighted in green
-- Switches to media slideshow if photos/videos are uploaded, then returns to timetable
-- Refreshes data every 60 seconds — timetable changes appear automatically
-
-**To find your PC's IP address on Windows:**
-1. Press `Win + R`, type `cmd`, press Enter
-2. Type `ipconfig` and press Enter
-3. Look for **IPv4 Address** — e.g. `192.168.1.105`
-4. Open `http://192.168.1.105:5000/display` on the TV
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/data` | Full app data (week, media, settings) |
-| POST | `/api/timetable` | Save one day's timetable |
-| GET | `/api/presets` | Get autocomplete lists |
-| POST | `/api/presets` | Add or update presets |
-| GET | `/api/templates` | List saved templates |
-| POST | `/api/templates/save-week` | Save full week as template |
-| GET | `/api/templates/load/<name>` | Load a template |
-| DELETE | `/api/templates/delete/<name>` | Delete a template |
-| POST | `/api/media/upload` | Upload a photo or video |
-| DELETE | `/api/media/delete/<id>` | Delete a media file |
-| POST | `/api/settings` | Update display settings |
-| GET | `/api/network-info` | Get server IP and URLs |
-
----
-
-## Venues
-
-The system has 8 predefined venues:
-
-- 5th Floor Lecture Hall
-- 4th Floor Lecture Hall A / B
-- 3rd Floor Lecture Hall A / B
-- 2nd Floor Computer Lab
-- 2nd Floor Bio-Lab
-- Basement Research Room
+Data files (auto-created): `timetable_data.json`, `presets.json`, `templates_data.json`, `catalog.json`, `lecturers.json`, `meeting.json`
 
 ---
 
 ## Troubleshooting
 
-**Smart TV cannot connect**
-- Make sure the PC and TV are on the same WiFi network
-- Run `START_AS_ADMIN.bat` so the Windows firewall allows port 5000
-- Use the IP shown in the admin panel banner, not `localhost`
-
-**Admin panel won't open**
-- Check that Python is installed and added to PATH
-- Re-run `START_SERVER.bat` and look for error messages in the terminal
-
-**Timetable not updating on TV**
-- The TV display refreshes every 60 seconds automatically
-- If it still doesn't update, reload the page on the TV browser
-
-**Logo not showing**
-- `msi_white.png` and `msu_white.png` must be in the `public/` folder
-- Check the `public/` folder exists after extracting the zip
+| Problem | Fix |
+|---------|-----|
+| Login page shows "Firebase not configured" | Complete `FIREBASE_SETUP.md` and paste config into `login.html` + `admin.html` |
+| Smart TV can't connect | PC and TV on same WiFi; run `START_AS_ADMIN.bat`; use IP not `localhost` |
+| Login fails from another PC | Add that PC's IP to Firebase Authorized domains (see setup guide Step 6) |
+| Port 5000 in use (Mac) | Turn off AirPlay Receiver, or change the port in `server.py` |
+| Logos not showing | Keep the PNG files in `public/` |
 
 ---
 
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Backend | Python, Flask, Flask-CORS |
-| Frontend | HTML, CSS, Vanilla JavaScript |
-| Data storage | JSON files (no database needed) |
-| Fonts | Google Fonts — Inter, Roboto Condensed |
-
----
-
-## License
-
-Internal use — Management & Science Institute (MSI), Sri Lanka.
+*Management & Science Institute (MSI), Sri Lanka — internal use.*

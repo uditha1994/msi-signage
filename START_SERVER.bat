@@ -18,7 +18,7 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 echo  [..] Installing packages...
-pip install flask flask-cors werkzeug --quiet --disable-pip-version-check
+pip install flask flask-cors werkzeug openpyxl --quiet --disable-pip-version-check
 echo  [OK] Ready.
 echo.
 

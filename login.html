@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MSI Signage — Login</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#8b0000 0%,#C0272D 50%,#6b0000 100%);padding:20px}
+.login-card{background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.3);
+  width:100%;max-width:400px;padding:40px 34px;text-align:center}
+.logos{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
+.logos img{height:48px;object-fit:contain}
+.logo-sep{width:1px;height:38px;background:#e2e5ea}
+.brand{font-size:1.15rem;font-weight:800;color:#1e2433;margin-top:10px}
+.brand-sub{font-size:.8rem;color:#7a8199;margin-bottom:28px}
+.field{text-align:left;margin-bottom:16px}
+.field label{display:block;font-size:.82rem;font-weight:600;color:#374151;margin-bottom:5px}
+.field input{width:100%;border:1.5px solid #e2e5ea;border-radius:9px;padding:11px 14px;font-size:.92rem;
+  font-family:inherit;color:#1e2433;transition:all .15s}
+.field input:focus{outline:none;border-color:#C0272D;box-shadow:0 0 0 3px rgba(192,39,45,.1)}
+.btn-login{width:100%;background:linear-gradient(90deg,#C0272D,#8b0000);color:#fff;border:none;
+  border-radius:9px;padding:13px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all .15s;margin-top:8px}
+.btn-login:hover{box-shadow:0 6px 18px rgba(192,39,45,.4)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed}
+.error-msg{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;
+  padding:10px 14px;font-size:.82rem;margin-bottom:16px;display:none;text-align:left}
+.error-msg.show{display:block}
+.config-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:8px;
+  padding:12px 14px;font-size:.78rem;margin-bottom:20px;text-align:left;line-height:1.5;display:none}
+.config-warn.show{display:block}
+.config-warn code{background:#fef3c7;padding:1px 5px;border-radius:3px;font-size:.74rem}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.foot{margin-top:22px;font-size:.74rem;color:#9ca3af}
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logos">
+    <img src="/logos/msi_black.png" alt="MSI" onerror="this.style.display='none'">
+    <div class="logo-sep"></div>
+    <img src="/logos/msu_black.png" alt="MSU" onerror="this.style.display='none'">
+  </div>
+  <div class="brand">Digital Signage Admin</div>
+  <div class="brand-sub">Sign in to manage the campus display</div>
+
+  <div class="config-warn" id="config-warn">
+    ⚠ <strong>Firebase not configured.</strong> Open <code>login.html</code> and <code>admin.html</code>,
+    and paste your Firebase config into the <code>firebaseConfig</code> block. See <code>FIREBASE_SETUP.md</code>.
+  </div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="admin@msi.lk" autocomplete="username">
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+           onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <button class="btn-login" id="login-btn" onclick="doLogin()">Sign In</button>
+
+  <div class="foot">MSI Campus · Authorized staff only</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ════════════════════════════════════════════════════════════
+//  PASTE YOUR FIREBASE CONFIG HERE
+//  Get it from: Firebase Console → Project Settings → Your apps → Web app
+// ════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+// ════════════════════════════════════════════════════════════
+
+const notConfigured = firebaseConfig.apiKey === "PASTE_YOUR_API_KEY";
+
+const errEl = document.getElementById('error-msg');
+const btn   = document.getElementById('login-btn');
+
+if (notConfigured) {
+  document.getElementById('config-warn').classList.add('show');
+}
+
+let auth = null;
+if (!notConfigured) {
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  // Already logged in? go to admin
+  onAuthStateChanged(auth, (user) => {
+    if (user) window.location.href = '/';
+  });
+}
+
+function showErr(msg){ errEl.textContent = msg; errEl.classList.add('show'); }
+
+window.doLogin = async function(){
+  errEl.classList.remove('show');
+  if (notConfigured){
+    showErr('Firebase is not configured yet. See the setup guide.');
+    return;
+  }
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value;
+  if(!email || !pass){ showErr('Enter email and password.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Signing in...';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    window.location.href = '/';
+  } catch(e) {
+    let msg = 'Login failed. Check your credentials.';
+    if(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') msg = 'Wrong email or password.';
+    else if(e.code === 'auth/user-not-found') msg = 'No account found for this email.';
+    else if(e.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
+    else if(e.code === 'auth/invalid-email') msg = 'Invalid email address.';
+    showErr(msg);
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+};
+</script>
+</body>
+</html>

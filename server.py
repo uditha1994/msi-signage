@@ -10,9 +10,16 @@ CORS(app)
 DATA_FILE      = 'timetable_data.json'
 PRESETS_FILE   = 'presets.json'
 TEMPLATES_FILE = 'templates_data.json'
+CATALOG_FILE   = 'catalog.json'        # programs -> modules -> lessons
+LECTURERS_FILE = 'lecturers.json'      # lecturer profiles with images
+MEETING_FILE   = 'meeting.json'        # special meeting mode
 MEDIA_FOLDER   = 'public/media'
+PROFILE_FOLDER = 'public/profiles'
+MEETING_FOLDER = 'public/meeting'
 ALLOWED_EXT    = {'png','jpg','jpeg','gif','mp4','webm','mov'}
-os.makedirs(MEDIA_FOLDER, exist_ok=True)
+IMG_EXT        = {'png','jpg','jpeg','gif','webp'}
+for d in (MEDIA_FOLDER, PROFILE_FOLDER, MEETING_FOLDER):
+    os.makedirs(d, exist_ok=True)
 
 VENUES = [
     "5th Floor Lecture Hall",
@@ -32,7 +39,17 @@ def get_local_ip():
         s.connect(('8.8.8.8', 80)); ip = s.getsockname()[0]; s.close(); return ip
     except: return '127.0.0.1'
 
-# ── Data helpers ─────────────────────────────────────────────
+# ── Generic JSON helpers ─────────────────────────────────────
+def _load(path, default):
+    if not os.path.exists(path):
+        with open(path,'w') as f: json.dump(default, f, indent=2)
+        return default
+    with open(path) as f: return json.load(f)
+
+def _save(path, obj):
+    with open(path,'w') as f: json.dump(obj, f, indent=2)
+
+# ── Timetable data ───────────────────────────────────────────
 def empty_week():
     return {day: {v: {"sessions": []} for v in VENUES} for day in DAYS}
 
@@ -41,50 +58,64 @@ def load_data():
         d = {"active_day": "MONDAY", "week": empty_week(), "media": [],
              "settings": {"slide_interval": 8, "timetable_duration": 30}}
         save_data(d); return d
-    with open(DATA_FILE) as f: return json.load(f)
+    return _load(DATA_FILE, {})
 
-def save_data(d):
-    with open(DATA_FILE,'w') as f: json.dump(d, f, indent=2)
+def save_data(d): _save(DATA_FILE, d)
 
+# ── Presets (kept for backward-compat autocomplete) ──────────
 def load_presets():
-    if not os.path.exists(PRESETS_FILE):
-        p = {
-            "programs":  ["DCS 01","DCS 02","BCS 01","BCS 02","DHTM 01","DHTM 02","DBMS 01","DBMS 02","PhD Sessions"],
-            "subjects":  ["Introduction to Accounting","Introduction to Tourism","Introduction to Tour Operation",
-                          "Information Technology","Organic Chemistry","Physical Chemistry","Data Structures",
-                          "Object Oriented Programming","Database Management","Web Development",
-                          "Research Methodology","Business Communication","Mathematics","Statistics"],
-            "lecturers": ["Ms. Janani Perera","Mr. Imal Perera","Mr. Uditha Lashan","Ms. Fatema Shabbir Abbasbhoy",
-                          "Ms. Upekshi Pavithra","Prof. Dr. Ali Khatibi","Mr. Kasun Silva","Ms. Dilini Fernando",
-                          "Mr. Chamara Bandara","Ms. Nimesha Perera"]
-        }
-        with open(PRESETS_FILE,'w') as f: json.dump(p,f,indent=2)
-        return p
-    with open(PRESETS_FILE) as f: return json.load(f)
+    return _load(PRESETS_FILE, {
+        "programs":  ["DCS 01","DCS 02","BCS 01","BCS 02","DHTM 01","DHTM 02","DBMS 01","DBMS 02","PhD Sessions"],
+        "subjects":  ["Introduction to Accounting","Information Technology","Data Structures",
+                      "Object Oriented Programming","Database Management","Web Development"],
+        "lecturers": ["Ms. Janani Perera","Mr. Imal Perera","Mr. Uditha Lashan"]
+    })
+def save_presets(p): _save(PRESETS_FILE, p)
 
-def save_presets(p):
-    with open(PRESETS_FILE,'w') as f: json.dump(p, f, indent=2)
+# ── Catalog: programs -> modules -> lessons ──────────────────
+def load_catalog():
+    return _load(CATALOG_FILE, {"programs": []})
+    # structure:
+    # { "programs": [
+    #     { "name":"DCS 01", "modules":[
+    #         { "name":"Object Oriented Programming", "code":"CCS20704",
+    #           "lessons":["Introduction to OOP","Classes & Objects","Inheritance"] }
+    #     ]}
+    # ]}
+def save_catalog(c): _save(CATALOG_FILE, c)
 
-def load_templates():
-    if not os.path.exists(TEMPLATES_FILE): return {}
-    with open(TEMPLATES_FILE) as f: return json.load(f)
+# ── Lecturers with profile images ───────────────────────────
+def load_lecturers():
+    return _load(LECTURERS_FILE, {"lecturers": []})
+    # { "lecturers":[ {"id":"..","name":"Mr. Uditha Lashan","image":"abc.jpg"} ] }
+def save_lecturers(l): _save(LECTURERS_FILE, l)
 
-def save_templates(t):
-    with open(TEMPLATES_FILE,'w') as f: json.dump(t, f, indent=2)
+# ── Templates ────────────────────────────────────────────────
+def load_templates(): return _load(TEMPLATES_FILE, {})
+def save_templates(t): _save(TEMPLATES_FILE, t)
 
-# ── API ──────────────────────────────────────────────────────
+# ── Special meeting ──────────────────────────────────────────
+def load_meeting():
+    return _load(MEETING_FILE, {"active": False, "title": "", "text": "", "media": []})
+def save_meeting(m): _save(MEETING_FILE, m)
+
+# ════════════════════════════════════════════════════════════
+#  API
+# ════════════════════════════════════════════════════════════
 @app.route('/api/data')
 def get_data():
-    return jsonify(load_data())
+    d = load_data()
+    d['meeting'] = load_meeting()
+    return jsonify(d)
 
 @app.route('/api/network-info')
 def network_info():
     ip = get_local_ip()
     return jsonify({'ip': ip, 'admin': f'http://{ip}:5000', 'display': f'http://{ip}:5000/display'})
 
+# ── Presets ──────────────────────────────────────────────────
 @app.route('/api/presets')
-def get_presets():
-    return jsonify(load_presets())
+def get_presets(): return jsonify(load_presets())
 
 @app.route('/api/presets', methods=['POST'])
 def update_presets():
@@ -95,10 +126,175 @@ def update_presets():
         for key in ('programs','subjects','lecturers'):
             if key in body:
                 val = body[key].strip()
-                if val and val not in p[key]: p[key].append(val)
+                if val and val not in p.get(key,[]): p.setdefault(key,[]).append(val)
     save_presets(p); return jsonify({'ok':True})
 
-# Save a single day's timetable
+# ── Catalog (programs/modules/lessons) ──────────────────────
+@app.route('/api/catalog')
+def get_catalog(): return jsonify(load_catalog())
+
+@app.route('/api/catalog', methods=['POST'])
+def save_catalog_route():
+    body = request.json
+    if 'programs' in body:
+        save_catalog({'programs': body['programs']})
+        return jsonify({'ok':True})
+    return jsonify({'error':'Invalid'}),400
+
+# ── Lecturers ────────────────────────────────────────────────
+@app.route('/api/lecturers')
+def get_lecturers(): return jsonify(load_lecturers())
+
+@app.route('/api/lecturers', methods=['POST'])
+def add_lecturer():
+    data = load_lecturers()
+    body = request.json
+    name = (body.get('name') or '').strip()
+    if not name: return jsonify({'error':'Name required'}),400
+    # update existing or add new
+    existing = next((l for l in data['lecturers'] if l['name']==name), None)
+    if existing:
+        if 'image' in body: existing['image'] = body['image']
+    else:
+        data['lecturers'].append({'id':uuid.uuid4().hex,'name':name,'image':body.get('image','')})
+    save_lecturers(data)
+    return jsonify({'ok':True})
+
+@app.route('/api/lecturers/delete/<lid>', methods=['DELETE'])
+def delete_lecturer(lid):
+    data = load_lecturers()
+    item = next((l for l in data['lecturers'] if l['id']==lid),None)
+    if item and item.get('image'):
+        fp = os.path.join(PROFILE_FOLDER, item['image'])
+        if os.path.exists(fp): os.remove(fp)
+    data['lecturers'] = [l for l in data['lecturers'] if l['id']!=lid]
+    save_lecturers(data)
+    return jsonify({'ok':True})
+
+@app.route('/api/lecturers/upload-image', methods=['POST'])
+def upload_profile():
+    if 'file' not in request.files: return jsonify({'error':'No file'}),400
+    file = request.files['file']
+    if file and '.' in file.filename and file.filename.rsplit('.',1)[1].lower() in IMG_EXT:
+        ext = file.filename.rsplit('.',1)[1].lower()
+        fname = f"{uuid.uuid4().hex}.{ext}"
+        file.save(os.path.join(PROFILE_FOLDER, fname))
+        return jsonify({'ok':True,'filename':fname})
+    return jsonify({'error':'Image files only'}),400
+
+# ── Excel import ─────────────────────────────────────────────
+@app.route('/api/import-excel', methods=['POST'])
+def import_excel():
+    """
+    Expects an .xlsx with sheets (any subset):
+      - 'Programs'  : column A = program name
+      - 'Modules'   : A=program, B=module name, C=module code(optional)
+      - 'Lessons'   : A=program, B=module, C=lesson
+      - 'Lecturers' : A=lecturer name
+    Falls back to a single sheet with columns: Program | Module | Code | Lesson | Lecturer
+    """
+    if 'file' not in request.files: return jsonify({'error':'No file'}),400
+    file = request.files['file']
+    if not (file and file.filename.lower().endswith(('.xlsx','.xls'))):
+        return jsonify({'error':'Excel files only (.xlsx)'}),400
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(file, data_only=True)
+    except Exception as e:
+        return jsonify({'error':f'Could not read Excel: {e}'}),400
+
+    catalog = load_catalog()
+    presets = load_presets()
+    lecturers = load_lecturers()
+
+    def get_program(name):
+        name = str(name).strip()
+        prog = next((p for p in catalog['programs'] if p['name']==name), None)
+        if not prog:
+            prog = {'name':name,'modules':[]}
+            catalog['programs'].append(prog)
+            if name not in presets.setdefault('programs',[]): presets['programs'].append(name)
+        return prog
+
+    def get_module(prog, mname, mcode=''):
+        mname = str(mname).strip()
+        mod = next((m for m in prog['modules'] if m['name']==mname), None)
+        if not mod:
+            mod = {'name':mname,'code':str(mcode or '').strip(),'lessons':[]}
+            prog['modules'].append(mod)
+            if mname not in presets.setdefault('subjects',[]): presets['subjects'].append(mname)
+        elif mcode and not mod.get('code'):
+            mod['code'] = str(mcode).strip()
+        return mod
+
+    sheets = {s.lower(): s for s in wb.sheetnames}
+    counts = {'programs':0,'modules':0,'lessons':0,'lecturers':0}
+
+    def rows_of(sheet_name):
+        ws = wb[sheet_name]
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if row and any(c is not None and str(c).strip() for c in row):
+                yield row
+
+    # Dedicated sheets
+    if 'programs' in sheets:
+        for row in rows_of(sheets['programs']):
+            if row[0]: get_program(row[0]); counts['programs']+=1
+    if 'modules' in sheets:
+        for row in rows_of(sheets['modules']):
+            if row[0] and len(row)>1 and row[1]:
+                prog = get_program(row[0])
+                get_module(prog, row[1], row[2] if len(row)>2 else '')
+                counts['modules']+=1
+    if 'lessons' in sheets:
+        for row in rows_of(sheets['lessons']):
+            if row[0] and len(row)>2 and row[1] and row[2]:
+                prog = get_program(row[0]); mod = get_module(prog, row[1])
+                lesson = str(row[2]).strip()
+                if lesson not in mod['lessons']: mod['lessons'].append(lesson); counts['lessons']+=1
+    if 'lecturers' in sheets:
+        for row in rows_of(sheets['lecturers']):
+            if row[0]:
+                lname = str(row[0]).strip()
+                if not any(l['name']==lname for l in lecturers['lecturers']):
+                    lecturers['lecturers'].append({'id':uuid.uuid4().hex,'name':lname,'image':''})
+                if lname not in presets.setdefault('lecturers',[]): presets['lecturers'].append(lname)
+                counts['lecturers']+=1
+
+    # Single combined sheet fallback (if no dedicated sheets matched)
+    if sum(counts.values())==0:
+        ws = wb[wb.sheetnames[0]]
+        header = [str(c.value).strip().lower() if c.value else '' for c in ws[1]]
+        def col(name):
+            for i,h in enumerate(header):
+                if name in h: return i
+            return -1
+        ci = {k:col(k) for k in ['program','module','code','lesson','lecturer']}
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row or not any(row): continue
+            pv = row[ci['program']] if ci['program']>=0 and ci['program']<len(row) else None
+            if pv:
+                prog = get_program(pv); counts['programs']+=1
+                mv = row[ci['module']] if ci['module']>=0 and ci['module']<len(row) else None
+                if mv:
+                    cv = row[ci['code']] if ci['code']>=0 and ci['code']<len(row) else ''
+                    mod = get_module(prog, mv, cv); counts['modules']+=1
+                    lv = row[ci['lesson']] if ci['lesson']>=0 and ci['lesson']<len(row) else None
+                    if lv:
+                        lv=str(lv).strip()
+                        if lv not in mod['lessons']: mod['lessons'].append(lv); counts['lessons']+=1
+            lecv = row[ci['lecturer']] if ci['lecturer']>=0 and ci['lecturer']<len(row) else None
+            if lecv:
+                lname=str(lecv).strip()
+                if not any(l['name']==lname for l in lecturers['lecturers']):
+                    lecturers['lecturers'].append({'id':uuid.uuid4().hex,'name':lname,'image':''})
+                if lname not in presets.setdefault('lecturers',[]): presets['lecturers'].append(lname)
+                counts['lecturers']+=1
+
+    save_catalog(catalog); save_presets(presets); save_lecturers(lecturers)
+    return jsonify({'ok':True,'imported':counts})
+
+# ── Timetable ────────────────────────────────────────────────
 @app.route('/api/timetable', methods=['POST'])
 def update_timetable():
     data = load_data(); body = request.json
@@ -107,17 +303,15 @@ def update_timetable():
     if 'week' not in data: data['week'] = empty_week()
     data['week'][day] = rows
     data['active_day'] = day
-    # auto-save new values to presets
     p = load_presets(); changed = False
     for venue, vdata in rows.items():
         for sess in vdata.get('sessions', []):
             for field, pkey in [('program','programs'),('subject','subjects'),('lecturer','lecturers')]:
-                val = sess.get(field,'').strip()
-                if val and val not in p[pkey]: p[pkey].append(val); changed = True
+                val = (sess.get(field) or '').strip()
+                if val and val not in p.get(pkey,[]): p.setdefault(pkey,[]).append(val); changed = True
     if changed: save_presets(p)
     save_data(data); return jsonify({'ok':True})
 
-# Set which day the TV shows
 @app.route('/api/active-day', methods=['POST'])
 def set_active_day():
     data = load_data()
@@ -127,40 +321,16 @@ def set_active_day():
 
 # ── Templates ────────────────────────────────────────────────
 @app.route('/api/templates')
-def get_templates():
-    return jsonify(load_templates())
+def get_templates(): return jsonify(load_templates())
 
 @app.route('/api/templates/save-week', methods=['POST'])
 def save_week_template():
-    """Save entire week (all 7 days) as a named template"""
-    body = request.json
-    name = body.get('name','').strip()
+    body = request.json; name = (body.get('name') or '').strip()
     if not name: return jsonify({'error':'Name required'}),400
-    data = load_data()
-    templates = load_templates()
-    templates[name] = {
-        'week': data.get('week', empty_week()),
-        'saved': datetime.now().strftime('%Y-%m-%d %H:%M')
-    }
-    save_templates(templates)
-    return jsonify({'ok':True, 'name':name})
-
-@app.route('/api/templates/save-day', methods=['POST'])
-def save_day_template():
-    """Save a single day's timetable as template"""
-    body = request.json
-    name = body.get('name','').strip()
-    day  = body.get('day','MONDAY')
-    if not name: return jsonify({'error':'Name required'}),400
-    data = load_data()
-    templates = load_templates()
-    templates[name] = {
-        'day': day,
-        'rows': data.get('week',{}).get(day,{}),
-        'saved': datetime.now().strftime('%Y-%m-%d %H:%M')
-    }
-    save_templates(templates)
-    return jsonify({'ok':True, 'name':name})
+    data = load_data(); templates = load_templates()
+    templates[name] = {'week': data.get('week', empty_week()),
+                       'saved': datetime.now().strftime('%Y-%m-%d %H:%M')}
+    save_templates(templates); return jsonify({'ok':True, 'name':name})
 
 @app.route('/api/templates/load/<name>')
 def load_template(name):
@@ -174,7 +344,7 @@ def delete_template(name):
     if name in templates: del templates[name]; save_templates(templates)
     return jsonify({'ok':True})
 
-# ── Media ────────────────────────────────────────────────────
+# ── Media (flyers/slideshow) ────────────────────────────────
 @app.route('/api/media/upload', methods=['POST'])
 def upload_media():
     if 'file' not in request.files: return jsonify({'error':'No file'}),400
@@ -202,6 +372,43 @@ def delete_media(mid):
         save_data(data)
     return jsonify({'ok':True})
 
+# ── Special Meeting ──────────────────────────────────────────
+@app.route('/api/meeting')
+def get_meeting(): return jsonify(load_meeting())
+
+@app.route('/api/meeting', methods=['POST'])
+def set_meeting():
+    body = request.json
+    m = load_meeting()
+    m['active'] = bool(body.get('active', m.get('active', False)))
+    if 'title' in body: m['title'] = body['title']
+    if 'text'  in body: m['text']  = body['text']
+    if 'media' in body: m['media'] = body['media']
+    save_meeting(m); return jsonify({'ok':True})
+
+@app.route('/api/meeting/upload', methods=['POST'])
+def meeting_upload():
+    if 'file' not in request.files: return jsonify({'error':'No file'}),400
+    file = request.files['file']
+    if file and '.' in file.filename and file.filename.rsplit('.',1)[1].lower() in ALLOWED_EXT:
+        ext = file.filename.rsplit('.',1)[1].lower()
+        fname = f"{uuid.uuid4().hex}.{ext}"
+        file.save(os.path.join(MEETING_FOLDER, fname))
+        return jsonify({'ok':True,'filename':fname,
+                        'type':'video' if ext in {'mp4','webm','mov'} else 'image'})
+    return jsonify({'error':'Not allowed'}),400
+
+@app.route('/api/meeting/clear', methods=['POST'])
+def meeting_clear():
+    m = load_meeting()
+    for item in m.get('media',[]):
+        fp = os.path.join(MEETING_FOLDER, item.get('filename',''))
+        if os.path.exists(fp):
+            try: os.remove(fp)
+            except: pass
+    save_meeting({"active": False, "title": "", "text": "", "media": []})
+    return jsonify({'ok':True})
+
 @app.route('/api/settings', methods=['POST'])
 def update_settings():
     data = load_data(); data['settings'].update(request.json); save_data(data); return jsonify({'ok':True})
@@ -210,11 +417,20 @@ def update_settings():
 @app.route('/media/<path:filename>')
 def serve_media(filename): return send_from_directory(MEDIA_FOLDER, filename)
 
+@app.route('/profiles/<path:filename>')
+def serve_profile(filename): return send_from_directory(PROFILE_FOLDER, filename)
+
+@app.route('/meeting-media/<path:filename>')
+def serve_meeting_media(filename): return send_from_directory(MEETING_FOLDER, filename)
+
 @app.route('/logos/<path:filename>')
 def serve_logos(filename): return send_from_directory('public', filename)
 
 @app.route('/')
 def admin(): return send_from_directory('.', 'admin.html')
+
+@app.route('/login')
+def login(): return send_from_directory('.', 'login.html')
 
 @app.route('/display')
 def display(): return send_from_directory('.', 'display.html')
@@ -224,7 +440,7 @@ if __name__ == '__main__':
     print("\n" + "="*56)
     print("  MSI Campus Digital Signage")
     print("="*56)
-    print(f"  Admin Panel  : http://localhost:5000")
-    print(f"  TV Display   : http://{ip}:5000/display")
+    print(f"  Login / Admin : http://localhost:5000")
+    print(f"  TV Display    : http://{ip}:5000/display")
     print("="*56 + "\n")
     app.run(host='0.0.0.0', port=5000, debug=False)

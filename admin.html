@@ -1,823 +1,1599 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSI Signage Admin</title>
-<script type="module">
-// Firebase auth guard — config loaded from server /.env
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MSI Signage Admin</title>
+  <script type="module">
+    // Firebase auth guard — config loaded from server /.env
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-try {
-  const r = await fetch('/api/firebase-config');
-  const d = await r.json();
-  if (d.configured && d.config) {
-    const app  = initializeApp(d.config);
-    const auth = getAuth(app);
-    // Hide page until auth confirmed
-    document.documentElement.style.visibility = 'hidden';
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        document.documentElement.style.visibility = 'visible';
-        const el = document.getElementById('user-email');
-        if (el) el.textContent = user.email;
+    try {
+      const r = await fetch('/api/firebase-config');
+      const d = await r.json();
+      if (d.configured && d.config) {
+        const app = initializeApp(d.config);
+        const auth = getAuth(app);
+        // Hide page until auth confirmed
+        document.documentElement.style.visibility = 'hidden';
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            document.documentElement.style.visibility = 'visible';
+            const el = document.getElementById('user-email');
+            if (el) el.textContent = user.email;
+          } else {
+            window.location.href = '/login';
+          }
+        });
+        window.doLogout = async function () {
+          await signOut(auth);
+          window.location.href = '/login';
+        };
       } else {
-        window.location.href = '/login';
+        window.doLogout = function () {
+          alert('Firebase is not configured yet. Auth is disabled.\nSee FIREBASE_SETUP.md');
+        };
+        console.warn('Firebase not configured — admin panel is unprotected. See FIREBASE_SETUP.md');
       }
-    });
-    window.doLogout = async function(){
-      await signOut(auth);
-      window.location.href = '/login';
-    };
-  } else {
-    window.doLogout = function(){
-      alert('Firebase is not configured yet. Auth is disabled.\nSee FIREBASE_SETUP.md');
-    };
-    console.warn('Firebase not configured — admin panel is unprotected. See FIREBASE_SETUP.md');
-  }
-} catch(e) {
-  console.error('Could not fetch Firebase config:', e);
-  window.doLogout = function(){ alert('Server connection error.'); };
-}
-</script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--red:#C0272D;--redd:#8b0000;--bg:#f0f2f5;--card:#fff;--bdr:#e2e5ea;--txt:#1e2433;--mut:#7a8199}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+    } catch (e) {
+      console.error('Could not fetch Firebase config:', e);
+      window.doLogout = function () { alert('Server connection error.'); };
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* TOPBAR - dark red with white logos */
-.topbar{
-  background:linear-gradient(90deg,var(--redd) 0%,var(--red) 100%);
-  padding:0 24px;height:66px;display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:200;box-shadow:0 2px 10px rgba(0,0,0,.25)
-}
-.tb-left{display:flex;align-items:center;gap:14px}
-.tb-logos{display:flex;align-items:center}
-.tb-logos img{height:46px;object-fit:contain}
-.tb-sep{width:1px;height:38px;background:rgba(255,255,255,.3);margin:0 12px}
-.tb-text .title{font-size:.95rem;font-weight:700;color:#fff;letter-spacing:.3px}
-.tb-text .sub{font-size:.71rem;color:rgba(255,255,255,.7)}
-.tb-right{display:flex;gap:8px;align-items:center}
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-/* NET BANNER */
-.net-banner{background:#0f172a;border-bottom:1px solid #1e293b;padding:7px 24px;display:flex;align-items:center;gap:14px;font-size:.8rem;color:#94a3b8}
-.net-ip{font-family:monospace;background:#1e293b;padding:2px 9px;border-radius:4px;color:#38bdf8;font-weight:600;letter-spacing:.3px}
-.net-ok{color:#4ade80;font-weight:600}.net-warn{color:#fbbf24;font-weight:600}
+    :root {
+      --red: #C0272D;
+      --redd: #8b0000;
+      --bg: #f0f2f5;
+      --card: #fff;
+      --bdr: #e2e5ea;
+      --txt: #1e2433;
+      --mut: #7a8199
+    }
 
-/* BTNS */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 15px;border-radius:6px;font-size:.84rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit;text-decoration:none;white-space:nowrap}
-.btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}.btn-ghost:hover{background:rgba(255,255,255,.25)}
-.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:var(--redd)}
-.btn-green{background:#15803d;color:#fff}.btn-green:hover{background:#166534}
-.btn-teal{background:#0f766e;color:#fff}.btn-teal:hover{background:#0d5c57}
-.btn-outline{background:#fff;color:var(--txt);border:1.5px solid var(--bdr)}.btn-outline:hover{background:var(--bg)}
-.btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
-.btn-sm{padding:4px 10px;font-size:.78rem}
-.btn-xs{padding:3px 8px;font-size:.74rem}
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      min-height: 100vh
+    }
 
-/* LAYOUT */
-.wrap{max-width:1380px;margin:0 auto;padding:20px}
+    /* TOPBAR - dark red with white logos */
+    .topbar {
+      background: linear-gradient(90deg, var(--redd) 0%, var(--red) 100%);
+      padding: 0 24px;
+      height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .25)
+    }
 
-/* TABS */
-.tabs{display:flex;border-bottom:2px solid var(--bdr);margin-bottom:20px}
-.tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:.87rem;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
-.tab.active{color:var(--red);border-bottom-color:var(--red)}
-.tab-panel{display:none}.tab-panel.active{display:block}
+    .tb-left {
+      display: flex;
+      align-items: center;
+      gap: 14px
+    }
 
-/* CARD */
-.card{background:var(--card);border-radius:12px;border:1px solid var(--bdr);padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:16px}
-.card-title{font-size:1rem;font-weight:700;margin-bottom:2px}
-.card-sub{font-size:.8rem;color:var(--mut);margin-bottom:16px}
+    .tb-logos {
+      display: flex;
+      align-items: center
+    }
 
-/* ── WEEK TABS ── */
-.week-nav{display:flex;align-items:center;gap:0;background:#f8f9fa;border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:18px}
-.day-tab{flex:1;padding:9px 4px;text-align:center;cursor:pointer;font-weight:600;font-size:.82rem;color:var(--mut);transition:all .15s;border-right:1px solid var(--bdr);position:relative}
-.day-tab:last-child{border-right:none}
-.day-tab:hover{background:#fef2f2;color:var(--red)}
-.day-tab.active{background:var(--red);color:#fff}
-.day-tab .has-dot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:#22c55e}
-.day-tab.active .has-dot{background:#fff}
+    .tb-logos img {
+      height: 46px;
+      object-fit: contain
+    }
 
-/* ── TEMPLATE PANEL ── */
-.tpl-panel{display:flex;align-items:center;gap:8px;padding:12px 14px;background:#fafff4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:14px;flex-wrap:wrap}
-.tpl-label{font-size:.8rem;font-weight:700;color:#15803d;white-space:nowrap}
-.tpl-sep{width:1px;height:20px;background:#bbf7d0;flex-shrink:0}
-.tpl-select{border:1.5px solid #86efac;border-radius:6px;padding:5px 9px;font-size:.81rem;font-family:inherit;color:#166534;background:#fff;min-width:180px}
-.tpl-select:focus{outline:none;border-color:#15803d}
-.tpl-name{border:1.5px solid #86efac;border-radius:6px;padding:5px 9px;font-size:.81rem;font-family:inherit;color:#166534;background:#fff;width:160px}
-.tpl-name:focus{outline:none;border-color:#15803d}
+    .tb-sep {
+      width: 1px;
+      height: 38px;
+      background: rgba(255, 255, 255, .3);
+      margin: 0 12px
+    }
 
-/* ── VENUE BLOCKS ── */
-.venue-block{border:1px solid var(--bdr);border-radius:10px;overflow:visible;margin-bottom:10px}
-.venue-header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#f8f9fa;border-bottom:1px solid var(--bdr);border-radius:10px 10px 0 0}
-.venue-name-left{display:flex;align-items:center;gap:8px}
-.venue-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
-.venue-lbl{font-weight:700;font-size:.88rem;color:#1e40af}
-.sess-count{font-size:.72rem;color:var(--mut);background:#f3f4f6;padding:2px 7px;border-radius:10px}
-.add-sess{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;border:1.5px dashed var(--red);background:transparent;color:var(--red);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
-.add-sess:hover{background:#fef2f2}
+    .tb-text .title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .3px
+    }
 
-/* ── SESSION ROWS ── */
-.sessions-body{overflow:visible}
-.sess-hdr{display:grid;grid-template-columns:78px 78px 110px 1fr 1fr 130px 30px;background:rgba(192,39,45,.06);border-bottom:1px solid rgba(192,39,45,.12)}
-.sh{padding:5px 10px;font-size:.67rem;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#9b2226}
-.sess-row{display:grid;grid-template-columns:78px 78px 110px 1fr 1fr 130px 30px;border-bottom:1px solid var(--bdr);overflow:visible;position:relative;align-items:center}
-.sess-row:last-child{border-bottom:none}
-.sess-row:nth-child(even){background:#fafbfc}
-.sess-row:hover{background:#fef9f9}
-.sc{padding:4px 7px;position:relative;overflow:visible}
-.time-inp{width:82px;border:1.5px solid var(--bdr);border-radius:5px;padding:5px 6px;font-size:.82rem;font-family:inherit;color:var(--txt);text-align:center;transition:all .15s}
-.sel-inp{width:100%;border:1.5px solid var(--bdr);border-radius:5px;padding:5px 5px;font-size:.79rem;font-family:inherit;color:var(--txt);background:#fff;transition:all .15s;cursor:pointer}
-.sel-inp:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(192,39,45,.08)}
-.sel-inp:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
-.time-inp:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(192,39,45,.1)}
-/* AUTOCOMPLETE */
-.ac-wrap{position:relative;overflow:visible}
-.ac-inp{width:100%;border:1.5px solid transparent;border-radius:5px;padding:5px 7px;font-size:.82rem;font-family:inherit;color:var(--txt);background:transparent;transition:all .15s}
-.ac-inp:focus{outline:none;border-color:var(--red);background:#fff;box-shadow:0 0 0 2px rgba(192,39,45,.08)}
-.ac-dd{display:none;position:absolute;top:calc(100% + 2px);left:0;min-width:220px;z-index:9999;background:#fff;border:1.5px solid var(--red);border-radius:7px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15)}
-.ac-dd.open{display:block}
-.ac-it{padding:7px 12px;font-size:.82rem;cursor:pointer;border-bottom:1px solid #f3f4f6;transition:background .1s}
-.ac-it:last-child{border-bottom:none}
-.ac-it:hover,.ac-it.sel{background:#fef2f2;color:var(--red)}
-.ac-it .hl{font-weight:700;color:var(--red)}
-.ac-new{color:var(--mut);font-style:italic}
-.del-btn{width:26px;height:26px;border-radius:50%;background:transparent;border:1.5px solid #fca5a5;color:#ef4444;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;margin:auto;flex-shrink:0}
-.del-btn:hover{background:#fef2f2;border-color:#ef4444}
-.empty-venue{padding:12px 16px;color:var(--mut);font-size:.8rem;font-style:italic;text-align:center}
+    .tb-text .sub {
+      font-size: .71rem;
+      color: rgba(255, 255, 255, .7)
+    }
 
-/* MEDIA */
-.upload-zone{border:2px dashed var(--bdr);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#fafafa}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--red);background:#fef2f2}
-.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:14px}
-.media-card{border:1px solid var(--bdr);border-radius:8px;overflow:hidden;background:#fff;position:relative}
-.media-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.1)}
-.media-thumb{width:100%;height:110px;object-fit:cover;display:block}
-.media-info{padding:7px}
-.media-name{font-size:.72rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.media-badge{font-size:.65rem;padding:2px 6px;border-radius:10px;font-weight:600;display:inline-block;margin-top:2px}
-.type-image{background:#dbeafe;color:#1d4ed8}.type-video{background:#f3e8ff;color:#7c3aed}
-.media-del{position:absolute;top:5px;right:5px;background:rgba(220,38,38,.85);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
-.media-card:hover .media-del{opacity:1}
+    .tb-right {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
 
-/* SETTINGS & PRESETS */
-.sg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fg{display:flex;flex-direction:column;gap:4px}
-.fg label{font-weight:600;font-size:.82rem}
-.fg input{border:1.5px solid var(--bdr);border-radius:6px;padding:8px 11px;font-size:.87rem;font-family:inherit;color:var(--txt)}
-.fg input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(192,39,45,.08)}
-.fg small{font-size:.72rem;color:var(--mut)}
-.ps-section{margin-bottom:18px}
-.ps-title{font-size:.87rem;font-weight:700;margin-bottom:7px}
-.tag-list{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
-.tag{background:#f3f4f6;border:1px solid var(--bdr);border-radius:14px;padding:3px 10px;font-size:.77rem;display:inline-flex;align-items:center;gap:5px}
-.tag-x{cursor:pointer;color:var(--mut);font-size:.68rem}.tag-x:hover{color:#dc2626}
-.ps-add{display:flex;gap:7px}
-.ps-add input{flex:1;border:1.5px solid var(--bdr);border-radius:6px;padding:6px 10px;font-size:.82rem;font-family:inherit}
-.ps-add input:focus{outline:none;border-color:var(--red)}
+    /* NET BANNER */
+    .net-banner {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 7px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: .8rem;
+      color: #94a3b8
+    }
 
-/* TOAST */
-.toast{position:fixed;bottom:18px;right:18px;background:#1e2433;color:#fff;padding:10px 16px;border-radius:8px;font-size:.86rem;font-weight:500;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:99999;transform:translateY(70px);opacity:0;transition:all .28s}
-.toast.show{transform:translateY(0);opacity:1}
-.toast.ok{border-left:4px solid #22c55e}.toast.err{border-left:4px solid #ef4444}.toast.info{border-left:4px solid #3b82f6}
-.uprog{display:none;margin-top:8px}.uprog.show{display:block}
-.uprog-t{height:5px;background:var(--bdr);border-radius:3px;overflow:hidden}
-.uprog-f{height:100%;background:linear-gradient(90deg,var(--red),#f87171);width:0%;transition:width .3s;border-radius:3px}
-</style>
+    .net-ip {
+      font-family: monospace;
+      background: #1e293b;
+      padding: 2px 9px;
+      border-radius: 4px;
+      color: #38bdf8;
+      font-weight: 600;
+      letter-spacing: .3px
+    }
+
+    .net-ok {
+      color: #4ade80;
+      font-weight: 600
+    }
+
+    .net-warn {
+      color: #fbbf24;
+      font-weight: 600
+    }
+
+    /* BTNS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 15px;
+      border-radius: 6px;
+      font-size: .84rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+      font-family: inherit;
+      text-decoration: none;
+      white-space: nowrap
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, .15);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, .3)
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, .25)
+    }
+
+    .btn-red {
+      background: var(--red);
+      color: #fff
+    }
+
+    .btn-red:hover {
+      background: var(--redd)
+    }
+
+    .btn-green {
+      background: #15803d;
+      color: #fff
+    }
+
+    .btn-green:hover {
+      background: #166534
+    }
+
+    .btn-teal {
+      background: #0f766e;
+      color: #fff
+    }
+
+    .btn-teal:hover {
+      background: #0d5c57
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--txt);
+      border: 1.5px solid var(--bdr)
+    }
+
+    .btn-outline:hover {
+      background: var(--bg)
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: .78rem
+    }
+
+    .btn-xs {
+      padding: 3px 8px;
+      font-size: .74rem
+    }
+
+    /* LAYOUT */
+    .wrap {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 20px
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--bdr);
+      margin-bottom: 20px
+    }
+
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: .87rem;
+      color: var(--mut);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all .15s
+    }
+
+    .tab.active {
+      color: var(--red);
+      border-bottom-color: var(--red)
+    }
+
+    .tab-panel {
+      display: none
+    }
+
+    .tab-panel.active {
+      display: block
+    }
+
+    /* CARD */
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--bdr);
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .04);
+      margin-bottom: 16px
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 2px
+    }
+
+    .card-sub {
+      font-size: .8rem;
+      color: var(--mut);
+      margin-bottom: 16px
+    }
+
+    /* ── WEEK TABS ── */
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: #f8f9fa;
+      border: 1px solid var(--bdr);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 18px
+    }
+
+    .day-tab {
+      flex: 1;
+      padding: 9px 4px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: .82rem;
+      color: var(--mut);
+      transition: all .15s;
+      border-right: 1px solid var(--bdr);
+      position: relative
+    }
+
+    .day-tab:last-child {
+      border-right: none
+    }
+
+    .day-tab:hover {
+      background: #fef2f2;
+      color: var(--red)
+    }
+
+    .day-tab.active {
+      background: var(--red);
+      color: #fff
+    }
+
+    .day-tab .has-dot {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e
+    }
+
+    .day-tab.active .has-dot {
+      background: #fff
+    }
+
+    /* ── TEMPLATE PANEL ── */
+    .tpl-panel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      background: #fafff4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap
+    }
+
+    .tpl-label {
+      font-size: .8rem;
+      font-weight: 700;
+      color: #15803d;
+      white-space: nowrap
+    }
+
+    .tpl-sep {
+      width: 1px;
+      height: 20px;
+      background: #bbf7d0;
+      flex-shrink: 0
+    }
+
+    .tpl-select {
+      border: 1.5px solid #86efac;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: .81rem;
+      font-family: inherit;
+      color: #166534;
+      background: #fff;
+      min-width: 180px
+    }
+
+    .tpl-select:focus {
+      outline: none;
+      border-color: #15803d
+    }
+
+    .tpl-name {
+      border: 1.5px solid #86efac;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: .81rem;
+      font-family: inherit;
+      color: #166534;
+      background: #fff;
+      width: 160px
+    }
+
+    .tpl-name:focus {
+      outline: none;
+      border-color: #15803d
+    }
+
+    /* ── VENUE BLOCKS ── */
+    .venue-block {
+      border: 1px solid var(--bdr);
+      border-radius: 10px;
+      overflow: visible;
+      margin-bottom: 10px
+    }
+
+    .venue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--bdr);
+      border-radius: 10px 10px 0 0
+    }
+
+    .venue-name-left {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .venue-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0
+    }
+
+    .venue-lbl {
+      font-weight: 700;
+      font-size: .88rem;
+      color: #1e40af
+    }
+
+    .sess-count {
+      font-size: .72rem;
+      color: var(--mut);
+      background: #f3f4f6;
+      padding: 2px 7px;
+      border-radius: 10px
+    }
+
+    .add-sess {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1.5px dashed var(--red);
+      background: transparent;
+      color: var(--red);
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit
+    }
+
+    .add-sess:hover {
+      background: #fef2f2
+    }
+
+    /* ── SESSION ROWS ── */
+    .sessions-body {
+      overflow: visible
+    }
+
+    .sess-hdr {
+      display: grid;
+      grid-template-columns: 78px 78px 110px 1fr 1fr 130px 30px;
+      background: rgba(192, 39, 45, .06);
+      border-bottom: 1px solid rgba(192, 39, 45, .12)
+    }
+
+    .sh {
+      padding: 5px 10px;
+      font-size: .67rem;
+      font-weight: 700;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+      color: #9b2226
+    }
+
+    .sess-row {
+      display: grid;
+      grid-template-columns: 78px 78px 110px 1fr 1fr 130px 30px;
+      border-bottom: 1px solid var(--bdr);
+      overflow: visible;
+      position: relative;
+      align-items: center
+    }
+
+    .sess-row:last-child {
+      border-bottom: none
+    }
+
+    .sess-row:nth-child(even) {
+      background: #fafbfc
+    }
+
+    .sess-row:hover {
+      background: #fef9f9
+    }
+
+    .sc {
+      padding: 4px 7px;
+      position: relative;
+      overflow: visible
+    }
+
+    .time-inp {
+      width: 82px;
+      border: 1.5px solid var(--bdr);
+      border-radius: 5px;
+      padding: 5px 6px;
+      font-size: .82rem;
+      font-family: inherit;
+      color: var(--txt);
+      text-align: center;
+      transition: all .15s
+    }
+
+    .sel-inp {
+      width: 100%;
+      border: 1.5px solid var(--bdr);
+      border-radius: 5px;
+      padding: 5px 5px;
+      font-size: .79rem;
+      font-family: inherit;
+      color: var(--txt);
+      background: #fff;
+      transition: all .15s;
+      cursor: pointer
+    }
+
+    .sel-inp:focus {
+      outline: none;
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(192, 39, 45, .08)
+    }
+
+    .sel-inp:disabled {
+      background: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed
+    }
+
+    .time-inp:focus {
+      outline: none;
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(192, 39, 45, .1)
+    }
+
+    /* AUTOCOMPLETE */
+    .ac-wrap {
+      position: relative;
+      overflow: visible
+    }
+
+    .ac-inp {
+      width: 100%;
+      border: 1.5px solid transparent;
+      border-radius: 5px;
+      padding: 5px 7px;
+      font-size: .82rem;
+      font-family: inherit;
+      color: var(--txt);
+      background: transparent;
+      transition: all .15s
+    }
+
+    .ac-inp:focus {
+      outline: none;
+      border-color: var(--red);
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(192, 39, 45, .08)
+    }
+
+    .ac-dd {
+      display: none;
+      position: absolute;
+      top: calc(100% + 2px);
+      left: 0;
+      min-width: 220px;
+      z-index: 9999;
+      background: #fff;
+      border: 1.5px solid var(--red);
+      border-radius: 7px;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .15)
+    }
+
+    .ac-dd.open {
+      display: block
+    }
+
+    .ac-it {
+      padding: 7px 12px;
+      font-size: .82rem;
+      cursor: pointer;
+      border-bottom: 1px solid #f3f4f6;
+      transition: background .1s
+    }
+
+    .ac-it:last-child {
+      border-bottom: none
+    }
+
+    .ac-it:hover,
+    .ac-it.sel {
+      background: #fef2f2;
+      color: var(--red)
+    }
+
+    .ac-it .hl {
+      font-weight: 700;
+      color: var(--red)
+    }
+
+    .ac-new {
+      color: var(--mut);
+      font-style: italic
+    }
+
+    .del-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: transparent;
+      border: 1.5px solid #fca5a5;
+      color: #ef4444;
+      font-size: .85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+      margin: auto;
+      flex-shrink: 0
+    }
+
+    .del-btn:hover {
+      background: #fef2f2;
+      border-color: #ef4444
+    }
+
+    .empty-venue {
+      padding: 12px 16px;
+      color: var(--mut);
+      font-size: .8rem;
+      font-style: italic;
+      text-align: center
+    }
+
+    /* MEDIA */
+    .upload-zone {
+      border: 2px dashed var(--bdr);
+      border-radius: 10px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      background: #fafafa
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag {
+      border-color: var(--red);
+      background: #fef2f2
+    }
+
+    .upload-zone input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 14px
+    }
+
+    .media-card {
+      border: 1px solid var(--bdr);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      position: relative
+    }
+
+    .media-card:hover {
+      box-shadow: 0 3px 10px rgba(0, 0, 0, .1)
+    }
+
+    .media-thumb {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      display: block
+    }
+
+    .media-info {
+      padding: 7px
+    }
+
+    .media-name {
+      font-size: .72rem;
+      color: var(--mut);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .media-badge {
+      font-size: .65rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 2px
+    }
+
+    .type-image {
+      background: #dbeafe;
+      color: #1d4ed8
+    }
+
+    .type-video {
+      background: #f3e8ff;
+      color: #7c3aed
+    }
+
+    .media-del {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(220, 38, 38, .85);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      font-size: .75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity .2s
+    }
+
+    .media-card:hover .media-del {
+      opacity: 1
+    }
+
+    /* SETTINGS & PRESETS */
+    .sg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px
+    }
+
+    .fg {
+      display: flex;
+      flex-direction: column;
+      gap: 4px
+    }
+
+    .fg label {
+      font-weight: 600;
+      font-size: .82rem
+    }
+
+    .fg input {
+      border: 1.5px solid var(--bdr);
+      border-radius: 6px;
+      padding: 8px 11px;
+      font-size: .87rem;
+      font-family: inherit;
+      color: var(--txt)
+    }
+
+    .fg input:focus {
+      outline: none;
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(192, 39, 45, .08)
+    }
+
+    .fg small {
+      font-size: .72rem;
+      color: var(--mut)
+    }
+
+    .ps-section {
+      margin-bottom: 18px
+    }
+
+    .ps-title {
+      font-size: .87rem;
+      font-weight: 700;
+      margin-bottom: 7px
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px
+    }
+
+    .tag {
+      background: #f3f4f6;
+      border: 1px solid var(--bdr);
+      border-radius: 14px;
+      padding: 3px 10px;
+      font-size: .77rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .tag-x {
+      cursor: pointer;
+      color: var(--mut);
+      font-size: .68rem
+    }
+
+    .tag-x:hover {
+      color: #dc2626
+    }
+
+    .ps-add {
+      display: flex;
+      gap: 7px
+    }
+
+    .ps-add input {
+      flex: 1;
+      border: 1.5px solid var(--bdr);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: .82rem;
+      font-family: inherit
+    }
+
+    .ps-add input:focus {
+      outline: none;
+      border-color: var(--red)
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      background: #1e2433;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: .86rem;
+      font-weight: 500;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, .2);
+      z-index: 99999;
+      transform: translateY(70px);
+      opacity: 0;
+      transition: all .28s
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1
+    }
+
+    .toast.ok {
+      border-left: 4px solid #22c55e
+    }
+
+    .toast.err {
+      border-left: 4px solid #ef4444
+    }
+
+    .toast.info {
+      border-left: 4px solid #3b82f6
+    }
+
+    .uprog {
+      display: none;
+      margin-top: 8px
+    }
+
+    .uprog.show {
+      display: block
+    }
+
+    .uprog-t {
+      height: 5px;
+      background: var(--bdr);
+      border-radius: 3px;
+      overflow: hidden
+    }
+
+    .uprog-f {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), #f87171);
+      width: 0%;
+      transition: width .3s;
+      border-radius: 3px
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="topbar">
-  <div class="tb-left">
-    <div class="tb-logos">
-      <img src="/logos/msi_white.png" alt="MSI" onerror="this.style.display='none'">
-      <div class="tb-sep"></div>
-      <img src="/logos/msu_white.png" alt="MSU" onerror="this.style.display='none'">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logos">
+        <img src="/logos/msi_white.png" alt="MSI" onerror="this.style.display='none'">
+        <div class="tb-sep"></div>
+        <img src="/logos/msu_white.png" alt="MSU" onerror="this.style.display='none'">
+      </div>
+      <div class="tb-text">
+        <div class="title">Digital Signage Admin</div>
+        <div class="sub">MSI Campus Display System</div>
+      </div>
     </div>
-    <div class="tb-text">
-      <div class="title">Digital Signage Admin</div>
-      <div class="sub">MSI Campus Display System</div>
+    <div class="tb-right">
+      <span id="user-email" style="color:rgba(255,255,255,.85);font-size:.8rem;margin-right:4px"></span>
+      <a href="/display" target="_blank" class="btn btn-ghost">📺 TV Display</a>
+      <button class="btn btn-ghost" style="background:rgba(255,255,255,.2)" onclick="saveDay()">💾 Save Day</button>
+      <button class="btn btn-ghost" onclick="doLogout()">↪ Logout</button>
     </div>
   </div>
-  <div class="tb-right">
-    <span id="user-email" style="color:rgba(255,255,255,.85);font-size:.8rem;margin-right:4px"></span>
-    <a href="/display" target="_blank" class="btn btn-ghost">📺 TV Display</a>
-    <button class="btn btn-ghost" style="background:rgba(255,255,255,.2)" onclick="saveDay()">💾 Save Day</button>
-    <button class="btn btn-ghost" onclick="doLogout()">↪ Logout</button>
-  </div>
-</div>
 
-<div class="net-banner">
-  <span>📡 TV URL:</span>
-  <span class="net-ip" id="net-url">Loading...</span>
-  <span id="net-st" class="net-warn">checking...</span>
-</div>
-
-<div class="wrap">
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('tt')">📋 Weekly Timetable</div>
-    <div class="tab" onclick="switchTab('catalog')">📚 Programs & Lessons</div>
-    <div class="tab" onclick="switchTab('lecturers')">👤 Lecturers</div>
-    <div class="tab" onclick="switchTab('meeting')">📢 Special Meeting</div>
-    <div class="tab" onclick="switchTab('tpl')">📁 Templates</div>
-    <div class="tab" onclick="switchTab('media')">🖼️ Photos & Videos</div>
-    <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+  <div class="net-banner">
+    <span>📡 TV URL:</span>
+    <span class="net-ip" id="net-url">Loading...</span>
+    <span id="net-st" class="net-warn">checking...</span>
   </div>
 
-  <!-- ── TIMETABLE TAB ── -->
-  <div class="tab-panel active" id="tab-tt">
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div>
-          <div class="card-title">Weekly Classroom Allocation</div>
-          <div style="font-size:.8rem;color:var(--mut)">Click a day tab to edit. Green dot = sessions added. Save each day separately.</div>
+  <div class="wrap">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('tt')">📋 Weekly Timetable</div>
+      <div class="tab" onclick="switchTab('catalog')">📚 Programs & Lessons</div>
+      <div class="tab" onclick="switchTab('lecturers')">👤 Lecturers</div>
+      <div class="tab" onclick="switchTab('meeting')">📢 Special Meeting</div>
+      <div class="tab" onclick="switchTab('tpl')">📁 Templates</div>
+      <div class="tab" onclick="switchTab('media')">🖼️ Photos & Videos</div>
+      <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+    </div>
+
+    <!-- ── TIMETABLE TAB ── -->
+    <div class="tab-panel active" id="tab-tt">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <div class="card-title">Weekly Classroom Allocation</div>
+            <div style="font-size:.8rem;color:var(--mut)">Click a day tab to edit. Green dot = sessions added. Save each
+              day separately.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-green btn-sm" onclick="saveDay()">💾 Save <span
+                id="save-day-label">Day</span></button>
+            <button class="btn btn-outline btn-sm" onclick="clearDay()">🗑 Clear Day</button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-green btn-sm" onclick="saveDay()">💾 Save <span id="save-day-label">Day</span></button>
-          <button class="btn btn-outline btn-sm" onclick="clearDay()">🗑 Clear Day</button>
-        </div>
-      </div>
 
-      <!-- Day tabs -->
-      <div class="week-nav" id="week-nav"></div>
+        <!-- Day tabs -->
+        <div class="week-nav" id="week-nav"></div>
 
-      <!-- Venue blocks -->
-      <div id="venue-blocks"></div>
-    </div>
-  </div>
-
-  <!-- ── TEMPLATES TAB ── -->
-  <div class="tab-panel" id="tab-tpl">
-    <div class="card">
-      <div class="card-title">📁 Weekly Templates</div>
-      <div class="card-sub">Save the full week (all 7 days) as a named template. Load it anytime to restore that schedule.</div>
-
-      <!-- Save section -->
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-bottom:20px">
-        <div style="font-weight:700;font-size:.88rem;color:#15803d;margin-bottom:10px">💾 Save Current Week as Template</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input id="tpl-save-name" class="tpl-name" style="width:240px" placeholder="e.g. Semester 1 Week, Regular Week...">
-          <button class="btn btn-green" onclick="saveWeekTemplate()">💾 Save Full Week</button>
-        </div>
-        <div style="font-size:.75rem;color:#4ade80;margin-top:6px">Saves all 7 days (Mon–Sun) into one template</div>
-      </div>
-
-      <!-- Templates list -->
-      <div style="font-weight:700;font-size:.88rem;margin-bottom:10px">📂 Saved Templates</div>
-      <div id="tpl-list">
-        <div style="color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No templates saved yet.</div>
+        <!-- Venue blocks -->
+        <div id="venue-blocks"></div>
       </div>
     </div>
-  </div>
 
-  <!-- ── MEDIA TAB ── -->
-  <div class="tab-panel" id="tab-media">
-    <div class="card">
-      <div class="card-title">Photos & Videos</div>
-      <div class="card-sub">Upload event photos or videos. They play as a slideshow between timetable displays on TV.</div>
-      <div class="upload-zone" id="uzone">
-        <input type="file" id="file-input" multiple accept="image/*,video/mp4,video/webm,video/quicktime" onchange="handleFiles(this.files)">
-        <div style="font-size:2rem;margin-bottom:7px">📁</div>
-        <div style="font-weight:600;font-size:.9rem">Click or drag & drop</div>
-        <div style="font-size:.78rem;color:var(--mut);margin-top:3px">JPG PNG GIF MP4 WEBM MOV</div>
-      </div>
-      <div class="uprog" id="uprog">
-        <div style="font-size:.8rem;color:var(--mut);margin-bottom:4px" id="up-st">Uploading...</div>
-        <div class="uprog-t"><div class="uprog-f" id="up-f"></div></div>
-      </div>
-      <div class="media-grid" id="media-grid"></div>
-    </div>
-  </div>
+    <!-- ── TEMPLATES TAB ── -->
+    <div class="tab-panel" id="tab-tpl">
+      <div class="card">
+        <div class="card-title">📁 Weekly Templates</div>
+        <div class="card-sub">Save the full week (all 7 days) as a named template. Load it anytime to restore that
+          schedule.</div>
 
-  <!-- ── PRESETS TAB ── -->
-  <!-- ── CATALOG TAB (Programs / Modules / Lessons + Excel) ── -->
-  <div class="tab-panel" id="tab-catalog">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
-        <div>
-          <div class="card-title">📚 Programs, Modules & Lessons</div>
-          <div class="card-sub">These feed the dropdowns in the timetable. Import from Excel or edit manually.</div>
+        <!-- Save section -->
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-bottom:20px">
+          <div style="font-weight:700;font-size:.88rem;color:#15803d;margin-bottom:10px">💾 Save Current Week as
+            Template</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="tpl-save-name" class="tpl-name" style="width:240px"
+              placeholder="e.g. Semester 1 Week, Regular Week...">
+            <button class="btn btn-green" onclick="saveWeekTemplate()">💾 Save Full Week</button>
+          </div>
+          <div style="font-size:.75rem;color:#4ade80;margin-top:6px">Saves all 7 days (Mon–Sun) into one template</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label class="btn btn-green" style="position:relative;overflow:hidden">
-            📄 Import Excel
-            <input type="file" accept=".xlsx,.xls" onchange="importExcel(this.files[0])"
-                   style="position:absolute;inset:0;opacity:0;cursor:pointer">
+
+        <!-- Templates list -->
+        <div style="font-weight:700;font-size:.88rem;margin-bottom:10px">📂 Saved Templates</div>
+        <div id="tpl-list">
+          <div style="color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No templates saved yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MEDIA TAB ── -->
+    <div class="tab-panel" id="tab-media">
+      <div class="card">
+        <div class="card-title">Photos & Videos</div>
+        <div class="card-sub">Upload event photos or videos. They play as a slideshow between timetable displays on TV.
+        </div>
+        <div class="upload-zone" id="uzone">
+          <input type="file" id="file-input" multiple accept="image/*,video/mp4,video/webm,video/quicktime"
+            onchange="handleFiles(this.files)">
+          <div style="font-size:2rem;margin-bottom:7px">📁</div>
+          <div style="font-weight:600;font-size:.9rem">Click or drag & drop</div>
+          <div style="font-size:.78rem;color:var(--mut);margin-top:3px">JPG PNG GIF MP4 WEBM MOV</div>
+        </div>
+        <div class="uprog" id="uprog">
+          <div style="font-size:.8rem;color:var(--mut);margin-bottom:4px" id="up-st">Uploading...</div>
+          <div class="uprog-t">
+            <div class="uprog-f" id="up-f"></div>
+          </div>
+        </div>
+        <div class="media-grid" id="media-grid"></div>
+      </div>
+    </div>
+
+    <!-- ── PRESETS TAB ── -->
+    <!-- ── CATALOG TAB (Programs / Modules / Lessons + Excel) ── -->
+    <div class="tab-panel" id="tab-catalog">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+          <div>
+            <div class="card-title">📚 Programs, Modules & Lessons</div>
+            <div class="card-sub">These feed the dropdowns in the timetable. Import from Excel or edit manually.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label class="btn btn-green" style="position:relative;overflow:hidden">
+              📄 Import Excel
+              <input type="file" accept=".xlsx,.xls" onchange="importExcel(this.files[0])"
+                style="position:absolute;inset:0;opacity:0;cursor:pointer">
+            </label>
+            <button class="btn btn-outline btn-sm" onclick="downloadExcelTemplate()">⬇ Sample Format</button>
+          </div>
+        </div>
+        <div id="excel-result"
+          style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.83rem"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">Programs</div>
+          <button class="btn btn-red btn-sm" onclick="addProgram()">＋ Add Program</button>
+        </div>
+        <div id="catalog-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ── LECTURERS TAB ── -->
+    <div class="tab-panel" id="tab-lecturers">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div>
+            <div class="card-title">👤 Lecturers</div>
+            <div class="card-sub">Add lecturers with profile photos. Photos appear on the TV timetable.</div>
+          </div>
+        </div>
+        <div
+          style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:18px;padding:14px;background:#f8f9fa;border:1px solid var(--bdr);border-radius:8px">
+          <input id="new-lec-name" class="tpl-name" style="width:240px"
+            placeholder="Lecturer name (e.g. Mr. Uditha Lashan)">
+          <label class="btn btn-outline btn-sm" style="position:relative;overflow:hidden">
+            📷 Choose Photo
+            <input type="file" id="new-lec-img" accept="image/*"
+              style="position:absolute;inset:0;opacity:0;cursor:pointer"
+              onchange="document.getElementById('lec-img-name').textContent=this.files[0]?this.files[0].name:'No photo'">
           </label>
-          <button class="btn btn-outline btn-sm" onclick="downloadExcelTemplate()">⬇ Sample Format</button>
+          <span id="lec-img-name" style="font-size:.78rem;color:var(--mut)">No photo</span>
+          <button class="btn btn-green btn-sm" onclick="addLecturer()">＋ Add Lecturer</button>
+        </div>
+        <div id="lecturers-grid"
+          style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- ── SPECIAL MEETING TAB ── -->
+    <div class="tab-panel" id="tab-meeting">
+      <div class="card">
+        <div class="card-title">📢 Special Meeting Display</div>
+        <div class="card-sub">Show a special meeting screen on the TV instead of the timetable. Turn it off to return to
+          normal.</div>
+
+        <div id="meeting-status"
+          style="padding:12px 16px;border-radius:8px;margin-bottom:18px;font-weight:600;font-size:.88rem"></div>
+
+        <div class="field-row" style="margin-bottom:14px">
+          <label style="display:block;font-weight:600;font-size:.84rem;margin-bottom:5px">Meeting Title</label>
+          <input id="mtg-title" class="tpl-name" style="width:100%;max-width:480px"
+            placeholder="e.g. Staff Meeting — All Lecturers">
+        </div>
+        <div class="field-row" style="margin-bottom:14px">
+          <label style="display:block;font-weight:600;font-size:.84rem;margin-bottom:5px">Message (optional)</label>
+          <textarea id="mtg-text" rows="3"
+            style="width:100%;max-width:600px;border:1.5px solid var(--bdr);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:.9rem;resize:vertical"
+            placeholder="e.g. All academic staff please gather in the 5th floor hall at 2:00 PM."></textarea>
+        </div>
+
+        <div class="field-row" style="margin-bottom:16px">
+          <label style="display:block;font-weight:600;font-size:.84rem;margin-bottom:5px">Photos / Videos (up to
+            3)</label>
+          <div class="upload-zone" id="mtg-uzone" style="max-width:480px">
+            <input type="file" id="mtg-file" multiple accept="image/*,video/mp4,video/webm,video/quicktime"
+              onchange="handleMeetingFiles(this.files)">
+            <div style="font-size:1.6rem">📁</div>
+            <div style="font-weight:600;font-size:.85rem">Click or drag photos/videos</div>
+          </div>
+          <div id="mtg-media-grid" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-green" onclick="activateMeeting()">📢 Show Meeting on TV</button>
+          <button class="btn btn-outline" onclick="saveMeetingDraft()">💾 Save (keep off)</button>
+          <button class="btn btn-danger" onclick="stopMeeting()">⏹ Stop & Return to Normal</button>
         </div>
       </div>
-      <div id="excel-result" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.83rem"></div>
     </div>
 
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div class="card-title" style="margin:0">Programs</div>
-        <button class="btn btn-red btn-sm" onclick="addProgram()">＋ Add Program</button>
-      </div>
-      <div id="catalog-wrap"></div>
-    </div>
-  </div>
-
-  <!-- ── LECTURERS TAB ── -->
-  <div class="tab-panel" id="tab-lecturers">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div>
-          <div class="card-title">👤 Lecturers</div>
-          <div class="card-sub">Add lecturers with profile photos. Photos appear on the TV timetable.</div>
+    <!-- ── SETTINGS TAB ── -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="card">
+        <div class="card-title">Display Settings</div>
+        <div class="card-sub">Control TV rotation timing.</div>
+        <div class="sg">
+          <div class="fg"><label>⏱ Timetable Duration (sec)</label><input type="number" id="s-tt" min="5" max="600"
+              placeholder="30"><small>How long timetable stays on screen</small></div>
+          <div class="fg"><label>🖼️ Slide Duration (sec)</label><input type="number" id="s-sl" min="3" max="120"
+              placeholder="8"><small>How long each photo/video shows</small></div>
         </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:18px;padding:14px;background:#f8f9fa;border:1px solid var(--bdr);border-radius:8px">
-        <input id="new-lec-name" class="tpl-name" style="width:240px" placeholder="Lecturer name (e.g. Mr. Uditha Lashan)">
-        <label class="btn btn-outline btn-sm" style="position:relative;overflow:hidden">
-          📷 Choose Photo
-          <input type="file" id="new-lec-img" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="document.getElementById('lec-img-name').textContent=this.files[0]?this.files[0].name:'No photo'">
-        </label>
-        <span id="lec-img-name" style="font-size:.78rem;color:var(--mut)">No photo</span>
-        <button class="btn btn-green btn-sm" onclick="addLecturer()">＋ Add Lecturer</button>
-      </div>
-      <div id="lecturers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
-    </div>
-  </div>
-
-  <!-- ── SPECIAL MEETING TAB ── -->
-  <div class="tab-panel" id="tab-meeting">
-    <div class="card">
-      <div class="card-title">📢 Special Meeting Display</div>
-      <div class="card-sub">Show a special meeting screen on the TV instead of the timetable. Turn it off to return to normal.</div>
-
-      <div id="meeting-status" style="padding:12px 16px;border-radius:8px;margin-bottom:18px;font-weight:600;font-size:.88rem"></div>
-
-      <div class="field-row" style="margin-bottom:14px">
-        <label style="display:block;font-weight:600;font-size:.84rem;margin-bottom:5px">Meeting Title</label>
-        <input id="mtg-title" class="tpl-name" style="width:100%;max-width:480px" placeholder="e.g. Staff Meeting — All Lecturers">
-      </div>
-      <div class="field-row" style="margin-bottom:14px">
-        <label style="display:block;font-weight:600;font-size:.84rem;margin-bottom:5px">Message (optional)</label>
-        <textarea id="mtg-text" rows="3" style="width:100%;max-width:600px;border:1.5px solid var(--bdr);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:.9rem;resize:vertical" placeholder="e.g. All academic staff please gather in the 5th floor hall at 2:00 PM."></textarea>
-      </div>
-
-      <div class="field-row" style="margin-bottom:16px">
-        <label style="display:block;font-weight:600;font-size:.84rem;margin-bottom:5px">Photos / Videos (up to 3)</label>
-        <div class="upload-zone" id="mtg-uzone" style="max-width:480px">
-          <input type="file" id="mtg-file" multiple accept="image/*,video/mp4,video/webm,video/quicktime" onchange="handleMeetingFiles(this.files)">
-          <div style="font-size:1.6rem">📁</div>
-          <div style="font-weight:600;font-size:.85rem">Click or drag photos/videos</div>
-        </div>
-        <div id="mtg-media-grid" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"></div>
-      </div>
-
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-green" onclick="activateMeeting()">📢 Show Meeting on TV</button>
-        <button class="btn btn-outline" onclick="saveMeetingDraft()">💾 Save (keep off)</button>
-        <button class="btn btn-danger" onclick="stopMeeting()">⏹ Stop & Return to Normal</button>
+        <div style="margin-top:14px"><button class="btn btn-green" onclick="saveSettings()">💾 Save</button></div>
       </div>
     </div>
   </div>
 
-  <!-- ── SETTINGS TAB ── -->
-  <div class="tab-panel" id="tab-settings">
-    <div class="card">
-      <div class="card-title">Display Settings</div>
-      <div class="card-sub">Control TV rotation timing.</div>
-      <div class="sg">
-        <div class="fg"><label>⏱ Timetable Duration (sec)</label><input type="number" id="s-tt" min="5" max="600" placeholder="30"><small>How long timetable stays on screen</small></div>
-        <div class="fg"><label>🖼️ Slide Duration (sec)</label><input type="number" id="s-sl" min="3" max="120" placeholder="8"><small>How long each photo/video shows</small></div>
-      </div>
-      <div style="margin-top:14px"><button class="btn btn-green" onclick="saveSettings()">💾 Save</button></div>
-    </div>
-  </div>
-</div>
+  <div class="toast" id="toast"></div>
 
-<div class="toast" id="toast"></div>
+  <script>
+    const API = window.location.origin + '/api';
+    const VENUES = [
+      "5th Floor Lecture Hall", "4th Floor Lecture Hall A", "4th Floor Lecture Hall B",
+      "3rd Floor Lecture Hall A", "3rd Floor Lecture Hall B",
+      "2nd Floor Computer Lab", "2nd Floor Bio-Lab", "Basement Research Room"
+    ];
+    const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-<script>
-const API = window.location.origin + '/api';
-const VENUES = [
-  "5th Floor Lecture Hall","4th Floor Lecture Hall A","4th Floor Lecture Hall B",
-  "3rd Floor Lecture Hall A","3rd Floor Lecture Hall B",
-  "2nd Floor Computer Lab","2nd Floor Bio-Lab","Basement Research Room"
-];
-const DAYS = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
-const DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    let appData = null, presets = null, templates = null;
+    let catalog = { programs: [] }, lecturersData = { lecturers: [] };
+    let activeDay = 'MONDAY';
+    // weekData[day][venue] = { sessions: [...] }
+    let weekData = {};
 
-let appData = null, presets = null, templates = null;
-let catalog = {programs:[]}, lecturersData = {lecturers:[]};
-let activeDay = 'MONDAY';
-// weekData[day][venue] = { sessions: [...] }
-let weekData = {};
+    // ── Utils ──────────────────────────────────────────────────
+    function uid() { return Math.random().toString(36).slice(2, 10) }
+    function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') }
+    function toast(msg, type = 'ok') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast show ${type}`;
+      setTimeout(() => t.classList.remove('show'), 3200);
+    }
+    function switchTab(n) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${n}')"]`).classList.add('active');
+      document.getElementById('tab-' + n).classList.add('active');
+      if (n === 'tpl') renderTemplateList();
+      if (n === 'catalog') renderCatalog();
+      if (n === 'lecturers') renderLecturers();
+      if (n === 'meeting') renderMeeting();
+    }
 
-// ── Utils ──────────────────────────────────────────────────
-function uid(){ return Math.random().toString(36).slice(2,10) }
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') }
-function toast(msg, type='ok'){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className=`toast show ${type}`;
-  setTimeout(()=>t.classList.remove('show'),3200);
-}
-function switchTab(n){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelector(`.tab[onclick="switchTab('${n}')"]`).classList.add('active');
-  document.getElementById('tab-'+n).classList.add('active');
-  if(n==='tpl') renderTemplateList();
-  if(n==='catalog') renderCatalog();
-  if(n==='lecturers') renderLecturers();
-  if(n==='meeting') renderMeeting();
-}
+    // ── Load ───────────────────────────────────────────────────
+    async function loadData() {
+      try {
+        const [dr, pr, tr, cr, lr] = await Promise.all([
+          fetch(API + '/data'), fetch(API + '/presets'), fetch(API + '/templates'),
+          fetch(API + '/catalog'), fetch(API + '/lecturers')
+        ]);
+        appData = await dr.json();
+        presets = await pr.json();
+        templates = await tr.json();
+        catalog = await cr.json();
+        lecturersData = await lr.json();
 
-// ── Load ───────────────────────────────────────────────────
-async function loadData(){
-  try{
-    const [dr,pr,tr,cr,lr] = await Promise.all([
-      fetch(API+'/data'), fetch(API+'/presets'), fetch(API+'/templates'),
-      fetch(API+'/catalog'), fetch(API+'/lecturers')
-    ]);
-    appData   = await dr.json();
-    presets   = await pr.json();
-    templates = await tr.json();
-    catalog   = await cr.json();
-    lecturersData = await lr.json();
+        // Build weekData from appData.week
+        weekData = {};
+        DAYS.forEach(day => {
+          weekData[day] = {};
+          VENUES.forEach(v => {
+            const src = appData.week?.[day]?.[v] || { sessions: [] };
+            weekData[day][v] = { sessions: (src.sessions || []).map(s => ({ ...s, id: s.id || uid() })) };
+          });
+        });
 
-    // Build weekData from appData.week
-    weekData = {};
-    DAYS.forEach(day => {
-      weekData[day] = {};
-      VENUES.forEach(v => {
-        const src = appData.week?.[day]?.[v] || {sessions:[]};
-        weekData[day][v] = { sessions: (src.sessions||[]).map(s=>({...s, id:s.id||uid()})) };
-      });
-    });
+        activeDay = appData.active_day || 'MONDAY';
+        renderWeekNav();
+        renderVenueBlocks();
+        renderMediaGrid();
+        document.getElementById('s-tt').value = appData.settings?.timetable_duration || 30;
+        document.getElementById('s-sl').value = appData.settings?.slide_interval || 8;
 
-    activeDay = appData.active_day || 'MONDAY';
-    renderWeekNav();
-    renderVenueBlocks();
-    renderMediaGrid();
-    document.getElementById('s-tt').value = appData.settings?.timetable_duration || 30;
-    document.getElementById('s-sl').value  = appData.settings?.slide_interval || 8;
+        // Network banner
+        fetch(API + '/network-info').then(r => r.json()).then(d => {
+          document.getElementById('net-url').textContent = d.display;
+          document.getElementById('net-st').textContent = '✅ Ready — open on TV browser';
+          document.getElementById('net-st').className = 'net-ok';
+        }).catch(() => { });
 
-    // Network banner
-    fetch(API+'/network-info').then(r=>r.json()).then(d=>{
-      document.getElementById('net-url').textContent = d.display;
-      document.getElementById('net-st').textContent  = '✅ Ready — open on TV browser';
-      document.getElementById('net-st').className    = 'net-ok';
-    }).catch(()=>{});
+      } catch (e) { toast('Cannot connect to server — run START_SERVER.bat', 'err') }
+    }
 
-  }catch(e){ toast('Cannot connect to server — run START_SERVER.bat','err') }
-}
-
-// ── Week Nav ───────────────────────────────────────────────
-function renderWeekNav(){
-  const nav = document.getElementById('week-nav');
-  nav.innerHTML = DAYS.map((day,i) => {
-    const hasSessions = VENUES.some(v => (weekData[day]?.[v]?.sessions||[]).length > 0);
-    return `<div class="day-tab${day===activeDay?' active':''}" onclick="switchDay('${day}')">
-      ${DAY_SHORT[i]}${hasSessions?'<span class="has-dot"></span>':''}
+    // ── Week Nav ───────────────────────────────────────────────
+    function renderWeekNav() {
+      const nav = document.getElementById('week-nav');
+      nav.innerHTML = DAYS.map((day, i) => {
+        const hasSessions = VENUES.some(v => (weekData[day]?.[v]?.sessions || []).length > 0);
+        return `<div class="day-tab${day === activeDay ? ' active' : ''}" onclick="switchDay('${day}')">
+      ${DAY_SHORT[i]}${hasSessions ? '<span class="has-dot"></span>' : ''}
     </div>`;
-  }).join('');
-  document.getElementById('save-day-label').textContent = activeDay.charAt(0)+activeDay.slice(1).toLowerCase();
-}
+      }).join('');
+      document.getElementById('save-day-label').textContent = activeDay.charAt(0) + activeDay.slice(1).toLowerCase();
+    }
 
-function switchDay(day){
-  // Sync current inputs before switching
-  syncInputs();
-  activeDay = day;
-  renderWeekNav();
-  renderVenueBlocks();
-}
+    function switchDay(day) {
+      // Sync current inputs before switching
+      syncInputs();
+      activeDay = day;
+      renderWeekNav();
+      renderVenueBlocks();
+    }
 
-// ── Venue Blocks ───────────────────────────────────────────
-function renderVenueBlocks(){
-  const wrap = document.getElementById('venue-blocks');
-  wrap.innerHTML = VENUES.map(v => venueBlockHTML(v)).join('');
-  wrap.querySelectorAll('.ac-inp').forEach(inp => attachAC(inp));
-}
+    // ── Venue Blocks ───────────────────────────────────────────
+    function renderVenueBlocks() {
+      const wrap = document.getElementById('venue-blocks');
+      wrap.innerHTML = VENUES.map(v => venueBlockHTML(v)).join('');
+      wrap.querySelectorAll('.ac-inp').forEach(inp => attachAC(inp));
+    }
 
-function venueBlockHTML(v){
-  const sessions = weekData[activeDay]?.[v]?.sessions || [];
-  const parts = v.match(/^(\d+\w*\s+Floor|Basement)\s+(.+)$/);
-  const label = parts ? `${parts[1]} — ${parts[2]}` : v;
-  const vid = v.replace(/\s+/g,'_');
-  return `<div class="venue-block" id="vb_${vid}">
+    function venueBlockHTML(v) {
+      const sessions = weekData[activeDay]?.[v]?.sessions || [];
+      const parts = v.match(/^(\d+\w*\s+Floor|Basement)\s+(.+)$/);
+      const label = parts ? `${parts[1]} — ${parts[2]}` : v;
+      const vid = v.replace(/\s+/g, '_');
+      return `<div class="venue-block" id="vb_${vid}">
     <div class="venue-header">
       <div class="venue-name-left">
         <div class="venue-dot"></div>
         <div class="venue-lbl">${label}</div>
-        <div class="sess-count">${sessions.length} session${sessions.length!==1?'s':''}</div>
+        <div class="sess-count">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</div>
       </div>
       <button class="add-sess" onclick="addSession('${esc(v)}')">＋ Add Session</button>
     </div>
     <div class="sessions-body" id="sb_${vid}">
-      ${sessions.length===0
-        ? `<div class="empty-venue">No sessions — click "+ Add Session"</div>`
-        : `<div class="sess-hdr">
+      ${sessions.length === 0
+          ? `<div class="empty-venue">No sessions — click "+ Add Session"</div>`
+          : `<div class="sess-hdr">
             <div class="sh">Start</div><div class="sh">End</div>
             <div class="sh">Program</div><div class="sh">Module</div>
             <div class="sh">Lesson</div><div class="sh">Lecturer</div><div class="sh"></div>
            </div>
-           ${sessions.map(s=>sessRowHTML(v,s)).join('')}`}
+           ${sessions.map(s => sessRowHTML(v, s)).join('')}`}
     </div>
   </div>`;
-}
+    }
 
-function sessRowHTML(v, s){
-  const vid = v.replace(/\s+/g,'_'), ve = esc(v);
-  // Build cascading options
-  const progOpts = ['<option value="">— Program —</option>']
-    .concat(catalogPrograms().map(p=>`<option value="${esc(p)}"${s.program===p?' selected':''}>${esc(p)}</option>`)).join('');
-  const modList = s.program ? catalogModules(s.program) : [];
-  const modOpts = ['<option value="">— Module —</option>']
-    .concat(modList.map(m=>`<option value="${esc(m.name)}"${s.subject===m.name?' selected':''}>${esc(m.name)}${m.code?' ('+esc(m.code)+')':''}</option>`)).join('');
-  const lessonList = (s.program && s.subject) ? catalogLessons(s.program, s.subject) : [];
-  const lessonOpts = ['<option value="">— Lesson —</option>']
-    .concat(lessonList.map(L=>`<option value="${esc(L)}"${s.lesson===L?' selected':''}>${esc(L)}</option>`)).join('');
+    function sessRowHTML(v, s) {
+      const vid = v.replace(/\s+/g, '_'), ve = esc(v);
+      // Build cascading options
+      const progOpts = ['<option value="">— Program —</option>']
+        .concat(catalogPrograms().map(p => `<option value="${esc(p)}"${s.program === p ? ' selected' : ''}>${esc(p)}</option>`)).join('');
+      const modList = s.program ? catalogModules(s.program) : [];
+      const modOpts = ['<option value="">— Module —</option>']
+        .concat(modList.map(m => `<option value="${esc(m.name)}"${s.subject === m.name ? ' selected' : ''}>${esc(m.name)}${m.code ? ' (' + esc(m.code) + ')' : ''}</option>`)).join('');
+      const lessonList = (s.program && s.subject) ? catalogLessons(s.program, s.subject) : [];
+      const lessonOpts = ['<option value="">— Lesson —</option>']
+        .concat(lessonList.map(L => `<option value="${esc(L)}"${s.lesson === L ? ' selected' : ''}>${esc(L)}</option>`)).join('');
 
-  return `<div class="sess-row" id="sr_${s.id}">
-    <div class="sc"><input class="time-inp" type="time" value="${s.time_start||''}" data-v="${ve}" data-id="${s.id}" data-f="time_start" onchange="updateField(this)"></div>
-    <div class="sc"><input class="time-inp" type="time" value="${s.time_end||''}"   data-v="${ve}" data-id="${s.id}" data-f="time_end"   onchange="updateField(this)"></div>
+      return `<div class="sess-row" id="sr_${s.id}">
+    <div class="sc"><input class="time-inp" type="time" value="${s.time_start || ''}" data-v="${ve}" data-id="${s.id}" data-f="time_start" onchange="updateField(this)"></div>
+    <div class="sc"><input class="time-inp" type="time" value="${s.time_end || ''}"   data-v="${ve}" data-id="${s.id}" data-f="time_end"   onchange="updateField(this)"></div>
     <div class="sc"><select class="sel-inp" data-v="${ve}" data-id="${s.id}" data-f="program" onchange="onProgramChange(this)">${progOpts}</select></div>
-    <div class="sc"><select class="sel-inp" data-v="${ve}" data-id="${s.id}" data-f="subject" onchange="onModuleChange(this)" ${modList.length?'':'disabled'}>${modOpts}</select></div>
-    <div class="sc"><select class="sel-inp" data-v="${ve}" data-id="${s.id}" data-f="lesson" onchange="updateField(this)" ${lessonList.length?'':'disabled'}>${lessonOpts}</select></div>
+    <div class="sc"><select class="sel-inp" data-v="${ve}" data-id="${s.id}" data-f="subject" onchange="onModuleChange(this)" ${modList.length ? '' : 'disabled'}>${modOpts}</select></div>
+    <div class="sc"><select class="sel-inp" data-v="${ve}" data-id="${s.id}" data-f="lesson" onchange="updateField(this)" ${lessonList.length ? '' : 'disabled'}>${lessonOpts}</select></div>
     <div class="sc"><div class="ac-wrap">
-      <input class="ac-inp" value="${esc(s.lecturer||'')}" placeholder="Lecturer..." data-v="${ve}" data-id="${s.id}" data-f="lecturer" data-pt="lecturers" onchange="updateField(this)" autocomplete="off">
+      <input class="ac-inp" value="${esc(s.lecturer || '')}" placeholder="Lecturer..." data-v="${ve}" data-id="${s.id}" data-f="lecturer" data-pt="lecturers" onchange="updateField(this)" autocomplete="off">
       <div class="ac-dd" id="dd_${s.id}_lect"></div>
     </div></div>
     <div class="sc"><button class="del-btn" onclick="delSession('${ve}','${s.id}')">✕</button></div>
   </div>`;
-}
+    }
 
-// ── Catalog helpers ──
-function catalogPrograms(){ return (catalog?.programs||[]).map(p=>p.name); }
-function catalogModules(prog){
-  const p = (catalog?.programs||[]).find(x=>x.name===prog);
-  return p ? (p.modules||[]) : [];
-}
-function catalogLessons(prog, modName){
-  const mods = catalogModules(prog);
-  const m = mods.find(x=>x.name===modName);
-  return m ? (m.lessons||[]) : [];
-}
+    // ── Catalog helpers ──
+    function catalogPrograms() { return (catalog?.programs || []).map(p => p.name); }
+    function catalogModules(prog) {
+      const p = (catalog?.programs || []).find(x => x.name === prog);
+      return p ? (p.modules || []) : [];
+    }
+    function catalogLessons(prog, modName) {
+      const mods = catalogModules(prog);
+      const m = mods.find(x => x.name === modName);
+      return m ? (m.lessons || []) : [];
+    }
 
-function onProgramChange(sel){
-  updateField(sel);
-  // reset module + lesson
-  const v = sel.dataset.v.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&lt;/g,'<');
-  const sess = weekData[activeDay]?.[v]?.sessions?.find(x=>x.id===sel.dataset.id);
-  if(sess){ sess.subject=''; sess.lesson=''; }
-  refreshVenueBlock(v);
-}
-function onModuleChange(sel){
-  updateField(sel);
-  const v = sel.dataset.v.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&lt;/g,'<');
-  const sess = weekData[activeDay]?.[v]?.sessions?.find(x=>x.id===sel.dataset.id);
-  if(sess){ sess.lesson=''; }
-  refreshVenueBlock(v);
-}
+    function onProgramChange(sel) {
+      updateField(sel);
+      // reset module + lesson
+      const v = sel.dataset.v.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+      const sess = weekData[activeDay]?.[v]?.sessions?.find(x => x.id === sel.dataset.id);
+      if (sess) { sess.subject = ''; sess.lesson = ''; }
+      refreshVenueBlock(v);
+    }
+    function onModuleChange(sel) {
+      updateField(sel);
+      const v = sel.dataset.v.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+      const sess = weekData[activeDay]?.[v]?.sessions?.find(x => x.id === sel.dataset.id);
+      if (sess) { sess.lesson = ''; }
+      refreshVenueBlock(v);
+    }
 
-function syncInputs(){
-  document.querySelectorAll('.ac-inp,.time-inp').forEach(inp => updateField(inp));
-}
+    function syncInputs() {
+      document.querySelectorAll('.ac-inp,.time-inp').forEach(inp => updateField(inp));
+    }
 
-function updateField(inp){
-  const v = inp.dataset.v?.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&lt;/g,'<');
-  const id = inp.dataset.id, f = inp.dataset.f;
-  if(!v||!id||!f) return;
-  const sess = weekData[activeDay]?.[v]?.sessions?.find(s=>s.id===id);
-  if(sess) sess[f] = inp.value.trim();
-}
+    function updateField(inp) {
+      const v = inp.dataset.v?.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+      const id = inp.dataset.id, f = inp.dataset.f;
+      if (!v || !id || !f) return;
+      const sess = weekData[activeDay]?.[v]?.sessions?.find(s => s.id === id);
+      if (sess) sess[f] = inp.value.trim();
+    }
 
-function addSession(v){
-  const vd = v.replace(/&amp;/g,'&').replace(/&quot;/g,'"');
-  if(!weekData[activeDay][vd]) weekData[activeDay][vd]={sessions:[]};
-  const s = {id:uid(),time_start:'',time_end:'',program:'',subject:'',lecturer:''};
-  weekData[activeDay][vd].sessions.push(s);
-  refreshVenueBlock(vd);
-  setTimeout(()=>document.getElementById('sr_'+s.id)?.querySelector('.time-inp')?.focus(), 50);
-}
+    function addSession(v) {
+      const vd = v.replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+      if (!weekData[activeDay][vd]) weekData[activeDay][vd] = { sessions: [] };
+      const s = { id: uid(), time_start: '', time_end: '', program: '', subject: '', lecturer: '' };
+      weekData[activeDay][vd].sessions.push(s);
+      refreshVenueBlock(vd);
+      setTimeout(() => document.getElementById('sr_' + s.id)?.querySelector('.time-inp')?.focus(), 50);
+    }
 
-function delSession(ve, sid){
-  const v = ve.replace(/&amp;/g,'&').replace(/&quot;/g,'"');
-  if(weekData[activeDay]?.[v]) weekData[activeDay][v].sessions = weekData[activeDay][v].sessions.filter(s=>s.id!==sid);
-  refreshVenueBlock(v);
-}
+    function delSession(ve, sid) {
+      const v = ve.replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+      if (weekData[activeDay]?.[v]) weekData[activeDay][v].sessions = weekData[activeDay][v].sessions.filter(s => s.id !== sid);
+      refreshVenueBlock(v);
+    }
 
-function refreshVenueBlock(v){
-  const vid = v.replace(/\s+/g,'_');
-  const el = document.getElementById('vb_'+vid);
-  if(!el) return;
-  el.outerHTML = venueBlockHTML(v);
-  document.getElementById('vb_'+vid)?.querySelectorAll('.ac-inp').forEach(inp=>attachAC(inp));
-  renderWeekNav(); // update dots
-}
+    function refreshVenueBlock(v) {
+      const vid = v.replace(/\s+/g, '_');
+      const el = document.getElementById('vb_' + vid);
+      if (!el) return;
+      el.outerHTML = venueBlockHTML(v);
+      document.getElementById('vb_' + vid)?.querySelectorAll('.ac-inp').forEach(inp => attachAC(inp));
+      renderWeekNav(); // update dots
+    }
 
-// ── Autocomplete ───────────────────────────────────────────
-function attachAC(inp){
-  const ptKey = inp.dataset.pt;
-  if(!ptKey) return;
-  const sid = inp.dataset.id;
-  const suffix = ptKey==='programs'?'prog':ptKey==='subjects'?'subj':'lect';
-  const dd = document.getElementById(`dd_${sid}_${suffix}`);
-  if(!dd) return;
+    // ── Autocomplete ───────────────────────────────────────────
+    function attachAC(inp) {
+      const ptKey = inp.dataset.pt;
+      if (!ptKey) return;
+      const sid = inp.dataset.id;
+      const suffix = ptKey === 'programs' ? 'prog' : ptKey === 'subjects' ? 'subj' : 'lect';
+      const dd = document.getElementById(`dd_${sid}_${suffix}`);
+      if (!dd) return;
 
-  const getList = () => (presets && presets[ptKey]) || [];
+      const getList = () => (presets && presets[ptKey]) || [];
 
-  const showDD = (items, q) => {
-    if(!items.length && !q){ dd.classList.remove('open'); return; }
-    const escaped_q = q ? q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') : '';
-    dd.innerHTML = items.slice(0,10).map(it=>{
-      const safe = it.replace(/</g,'&lt;');
-      const hl = q ? safe.replace(new RegExp(`(${escaped_q})`,'gi'),'<span class="hl">$1</span>') : safe;
-      return `<div class="ac-it" data-val="${esc(it)}">${hl}</div>`;
-    }).join('') + (q && !items.some(x=>x.toLowerCase()===q.toLowerCase()) ?
-      `<div class="ac-it ac-new" data-val="${esc(q)}">＋ Add "${q}"</div>` : '');
-    dd.querySelectorAll('.ac-it').forEach(item=>{
-      item.addEventListener('mousedown', e=>{
-        e.preventDefault();
-        inp.value = item.dataset.val.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&lt;/g,'<');
-        updateField(inp); dd.classList.remove('open');
+      const showDD = (items, q) => {
+        if (!items.length && !q) { dd.classList.remove('open'); return; }
+        const escaped_q = q ? q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+        dd.innerHTML = items.slice(0, 10).map(it => {
+          const safe = it.replace(/</g, '&lt;');
+          const hl = q ? safe.replace(new RegExp(`(${escaped_q})`, 'gi'), '<span class="hl">$1</span>') : safe;
+          return `<div class="ac-it" data-val="${esc(it)}">${hl}</div>`;
+        }).join('') + (q && !items.some(x => x.toLowerCase() === q.toLowerCase()) ?
+          `<div class="ac-it ac-new" data-val="${esc(q)}">＋ Add "${q}"</div>` : '');
+        dd.querySelectorAll('.ac-it').forEach(item => {
+          item.addEventListener('mousedown', e => {
+            e.preventDefault();
+            inp.value = item.dataset.val.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+            updateField(inp); dd.classList.remove('open');
+          });
+        });
+        dd.classList.add('open');
+      };
+
+      inp.addEventListener('focus', () => { const q = inp.value.trim(); showDD(q ? getList().filter(x => x.toLowerCase().includes(q.toLowerCase())) : getList(), q); });
+      inp.addEventListener('input', () => { const q = inp.value.trim(); showDD(q ? getList().filter(x => x.toLowerCase().includes(q.toLowerCase())) : getList(), q); });
+      inp.addEventListener('blur', () => setTimeout(() => dd.classList.remove('open'), 180));
+      inp.addEventListener('keydown', e => {
+        const items = [...dd.querySelectorAll('.ac-it')], cur = dd.querySelector('.ac-it.sel');
+        if (e.key === 'ArrowDown') { e.preventDefault(); const nx = cur ? items[items.indexOf(cur) + 1] : items[0]; cur?.classList.remove('sel'); nx?.classList.add('sel'); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); const pv = cur ? items[items.indexOf(cur) - 1] : null; cur?.classList.remove('sel'); pv?.classList.add('sel'); }
+        else if (e.key === 'Enter' && cur) { e.preventDefault(); inp.value = cur.dataset.val.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<'); updateField(inp); dd.classList.remove('open'); }
+        else if (e.key === 'Escape') dd.classList.remove('open');
       });
-    });
-    dd.classList.add('open');
-  };
+    }
 
-  inp.addEventListener('focus', ()=>{ const q=inp.value.trim(); showDD(q?getList().filter(x=>x.toLowerCase().includes(q.toLowerCase())):getList(),q); });
-  inp.addEventListener('input', ()=>{ const q=inp.value.trim(); showDD(q?getList().filter(x=>x.toLowerCase().includes(q.toLowerCase())):getList(),q); });
-  inp.addEventListener('blur',  ()=>setTimeout(()=>dd.classList.remove('open'),180));
-  inp.addEventListener('keydown', e=>{
-    const items=[...dd.querySelectorAll('.ac-it')], cur=dd.querySelector('.ac-it.sel');
-    if(e.key==='ArrowDown'){e.preventDefault();const nx=cur?items[items.indexOf(cur)+1]:items[0];cur?.classList.remove('sel');nx?.classList.add('sel');}
-    else if(e.key==='ArrowUp'){e.preventDefault();const pv=cur?items[items.indexOf(cur)-1]:null;cur?.classList.remove('sel');pv?.classList.add('sel');}
-    else if(e.key==='Enter'&&cur){e.preventDefault();inp.value=cur.dataset.val.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&lt;/g,'<');updateField(inp);dd.classList.remove('open');}
-    else if(e.key==='Escape') dd.classList.remove('open');
-  });
-}
+    // ── Save Day ───────────────────────────────────────────────
+    async function saveDay() {
+      syncInputs();
+      try {
+        const res = await fetch(API + '/timetable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day: activeDay, rows: weekData[activeDay] })
+        });
+        const d = await res.json();
+        if (d.ok) toast(`✅ ${activeDay.charAt(0) + activeDay.slice(1).toLowerCase()} saved!`);
+        else toast('Save failed', 'err');
+        renderWeekNav();
+      } catch (e) { toast('Error: ' + e.message, 'err') }
+    }
 
-// ── Save Day ───────────────────────────────────────────────
-async function saveDay(){
-  syncInputs();
-  try{
-    const res = await fetch(API+'/timetable',{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({day:activeDay, rows:weekData[activeDay]})});
-    const d = await res.json();
-    if(d.ok) toast(`✅ ${activeDay.charAt(0)+activeDay.slice(1).toLowerCase()} saved!`);
-    else toast('Save failed','err');
-    renderWeekNav();
-  }catch(e){ toast('Error: '+e.message,'err') }
-}
+    async function clearDay() {
+      if (!confirm(`Clear all sessions for ${activeDay}?`)) return;
+      VENUES.forEach(v => weekData[activeDay][v] = { sessions: [] });
+      renderVenueBlocks(); renderWeekNav();
+      toast('Cleared. Click "Save Day" to apply.', 'info');
+    }
 
-async function clearDay(){
-  if(!confirm(`Clear all sessions for ${activeDay}?`)) return;
-  VENUES.forEach(v=>weekData[activeDay][v]={sessions:[]});
-  renderVenueBlocks(); renderWeekNav();
-  toast('Cleared. Click "Save Day" to apply.','info');
-}
+    // ── Templates ──────────────────────────────────────────────
+    async function saveWeekTemplate() {
+      syncInputs();
+      const name = document.getElementById('tpl-save-name').value.trim();
+      if (!name) { toast('Enter a template name', 'err'); return; }
 
-// ── Templates ──────────────────────────────────────────────
-async function saveWeekTemplate(){
-  syncInputs();
-  const name = document.getElementById('tpl-save-name').value.trim();
-  if(!name){ toast('Enter a template name','err'); return; }
+      // First save all days
+      toast('Saving all days...', 'info');
+      for (const day of DAYS) {
+        await fetch(API + '/timetable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day, rows: weekData[day] })
+        });
+      }
 
-  // First save all days
-  toast('Saving all days...','info');
-  for(const day of DAYS){
-    await fetch(API+'/timetable',{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({day, rows:weekData[day]})});
-  }
-
-  // Then save as template
-  const r = await fetch(API+'/templates/save-week',{method:'POST',
-    headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
-  const d = await r.json();
-  if(d.ok){
-    toast(`✅ Template saved: "${name}"`);
-    document.getElementById('tpl-save-name').value='';
-    templates = await (await fetch(API+'/templates')).json();
-    renderTemplateList();
-  } else toast('Error saving template','err');
-}
-
-async function loadWeekTemplate(name){
-  if(!confirm(`Load template "${name}"?\nAll 7 days will be replaced.`)) return;
-  const r = await fetch(API+'/templates/load/'+encodeURIComponent(name));
-  const d = await r.json();
-  if(d.week){
-    DAYS.forEach(day=>{
-      weekData[day]={};
-      VENUES.forEach(v=>{
-        const src = d.week[day]?.[v]||{sessions:[]};
-        weekData[day][v]={sessions:(src.sessions||[]).map(s=>({...s,id:uid()}))};
+      // Then save as template
+      const r = await fetch(API + '/templates/save-week', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name })
       });
-    });
-    renderWeekNav(); renderVenueBlocks();
-    toast(`✅ Loaded: "${name}" — click Save Day to apply each day`,'info');
-  } else toast('Template not found','err');
-}
+      const d = await r.json();
+      if (d.ok) {
+        toast(`✅ Template saved: "${name}"`);
+        document.getElementById('tpl-save-name').value = '';
+        templates = await (await fetch(API + '/templates')).json();
+        renderTemplateList();
+      } else toast('Error saving template', 'err');
+    }
 
-async function deleteTemplate(name){
-  if(!confirm(`Delete template "${name}"?`)) return;
-  await fetch(API+'/templates/delete/'+encodeURIComponent(name),{method:'DELETE'});
-  toast('Deleted: '+name);
-  templates = await (await fetch(API+'/templates')).json();
-  renderTemplateList();
-}
+    async function loadWeekTemplate(name) {
+      if (!confirm(`Load template "${name}"?\nAll 7 days will be replaced.`)) return;
+      const r = await fetch(API + '/templates/load/' + encodeURIComponent(name));
+      const d = await r.json();
+      if (d.week) {
+        DAYS.forEach(day => {
+          weekData[day] = {};
+          VENUES.forEach(v => {
+            const src = d.week[day]?.[v] || { sessions: [] };
+            weekData[day][v] = { sessions: (src.sessions || []).map(s => ({ ...s, id: uid() })) };
+          });
+        });
+        renderWeekNav(); renderVenueBlocks();
+        toast(`✅ Loaded: "${name}" — click Save Day to apply each day`, 'info');
+      } else toast('Template not found', 'err');
+    }
 
-function renderTemplateList(){
-  const wrap = document.getElementById('tpl-list');
-  if(!templates || !Object.keys(templates).length){
-    wrap.innerHTML='<div style="color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No templates saved yet.</div>';
-    return;
-  }
-  wrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">` +
-    Object.entries(templates).map(([name,tpl])=>`
+    async function deleteTemplate(name) {
+      if (!confirm(`Delete template "${name}"?`)) return;
+      await fetch(API + '/templates/delete/' + encodeURIComponent(name), { method: 'DELETE' });
+      toast('Deleted: ' + name);
+      templates = await (await fetch(API + '/templates')).json();
+      renderTemplateList();
+    }
+
+    function renderTemplateList() {
+      const wrap = document.getElementById('tpl-list');
+      if (!templates || !Object.keys(templates).length) {
+        wrap.innerHTML = '<div style="color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No templates saved yet.</div>';
+        return;
+      }
+      wrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">` +
+        Object.entries(templates).map(([name, tpl]) => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8f9fa;border:1px solid var(--bdr);border-radius:8px">
       <div>
         <div style="font-weight:700;font-size:.9rem">${name}</div>
-        <div style="font-size:.75rem;color:var(--mut);margin-top:2px">Saved: ${tpl.saved||'—'} &nbsp;•&nbsp; ${tpl.week ? '7-day template' : (tpl.day||'')}</div>
+        <div style="font-size:.75rem;color:var(--mut);margin-top:2px">Saved: ${tpl.saved || '—'} &nbsp;•&nbsp; ${tpl.week ? '7-day template' : (tpl.day || '')}</div>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-teal btn-sm" onclick="loadWeekTemplate('${esc(name)}')">⬇ Load</button>
         <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${esc(name)}')">✕</button>
       </div>
     </div>`).join('') + `</div>`;
-}
+    }
 
-// ── Media ──────────────────────────────────────────────────
-function renderMediaGrid(){
-  const g=document.getElementById('media-grid');
-  if(!appData?.media?.length){g.innerHTML='<div style="text-align:center;padding:20px;color:var(--mut)">No media yet.</div>';return;}
-  g.innerHTML=appData.media.map(m=>`<div class="media-card">
-    ${m.type==='video'?`<video class="media-thumb" src="/media/${m.filename}" muted></video>`:`<img class="media-thumb" src="/media/${m.filename}" alt="">`}
+    // ── Media ──────────────────────────────────────────────────
+    function renderMediaGrid() {
+      const g = document.getElementById('media-grid');
+      if (!appData?.media?.length) { g.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">No media yet.</div>'; return; }
+      g.innerHTML = appData.media.map(m => `<div class="media-card">
+    ${m.type === 'video' ? `<video class="media-thumb" src="/media/${m.filename}" muted></video>` : `<img class="media-thumb" src="/media/${m.filename}" alt="">`}
     <button class="media-del" onclick="delMedia('${m.id}')">✕</button>
     <div class="media-info"><div class="media-name">${m.original}</div>
-    <span class="media-badge type-${m.type}">${m.type==='video'?'🎬 Video':'📷 Image'}</span></div>
+    <span class="media-badge type-${m.type}">${m.type === 'video' ? '🎬 Video' : '📷 Image'}</span></div>
   </div>`).join('');
-}
-async function handleFiles(files){
-  const pg=document.getElementById('uprog'),pf=document.getElementById('up-f'),st=document.getElementById('up-st');
-  pg.classList.add('show');
-  for(let i=0;i<files.length;i++){
-    st.textContent=`Uploading ${i+1}/${files.length}: ${files[i].name}`;
-    pf.style.width=((i/files.length)*100)+'%';
-    const fd=new FormData();fd.append('file',files[i]);
-    try{await fetch(API+'/media/upload',{method:'POST',body:fd});}catch(e){toast('Upload error','err')}
-  }
-  pf.style.width='100%';st.textContent='Done!';
-  setTimeout(()=>pg.classList.remove('show'),2000);
-  toast(`✅ ${files.length} file(s) uploaded!`);
-  appData=await(await fetch(API+'/data')).json();renderMediaGrid();
-}
-async function delMedia(id){
-  if(!confirm('Delete?'))return;
-  await fetch(API+'/media/delete/'+id,{method:'DELETE'});
-  appData=await(await fetch(API+'/data')).json();renderMediaGrid();toast('Deleted.');
-}
+    }
+    async function handleFiles(files) {
+      const pg = document.getElementById('uprog'), pf = document.getElementById('up-f'), st = document.getElementById('up-st');
+      pg.classList.add('show');
+      for (let i = 0; i < files.length; i++) {
+        st.textContent = `Uploading ${i + 1}/${files.length}: ${files[i].name}`;
+        pf.style.width = ((i / files.length) * 100) + '%';
+        const fd = new FormData(); fd.append('file', files[i]);
+        try { await fetch(API + '/media/upload', { method: 'POST', body: fd }); } catch (e) { toast('Upload error', 'err') }
+      }
+      pf.style.width = '100%'; st.textContent = 'Done!';
+      setTimeout(() => pg.classList.remove('show'), 2000);
+      toast(`✅ ${files.length} file(s) uploaded!`);
+      appData = await (await fetch(API + '/data')).json(); renderMediaGrid();
+    }
+    async function delMedia(id) {
+      if (!confirm('Delete?')) return;
+      await fetch(API + '/media/delete/' + id, { method: 'DELETE' });
+      appData = await (await fetch(API + '/data')).json(); renderMediaGrid(); toast('Deleted.');
+    }
 
-// ── Presets ────────────────────────────────────────────────
-function renderPresets(){
-  if(!presets)return;
-  const wrap=document.getElementById('preset-wrap');
-  const cats=[{k:'programs',l:'Programs'},{k:'subjects',l:'Subjects'},{k:'lecturers',l:'Lecturers'}];
-  wrap.innerHTML=cats.map((c,i)=>`
+    // ── Presets ────────────────────────────────────────────────
+    function renderPresets() {
+      if (!presets) return;
+      const wrap = document.getElementById('preset-wrap');
+      const cats = [{ k: 'programs', l: 'Programs' }, { k: 'subjects', l: 'Subjects' }, { k: 'lecturers', l: 'Lecturers' }];
+      wrap.innerHTML = cats.map((c, i) => `
     <div class="ps-section">
       <div class="ps-title">${c.l}</div>
-      <div class="tag-list">${(presets[c.k]||[]).map((v,j)=>`<span class="tag">${v}<span class="tag-x" onclick="removePreset('${c.k}',${j})">✕</span></span>`).join('')}</div>
+      <div class="tag-list">${(presets[c.k] || []).map((v, j) => `<span class="tag">${v}<span class="tag-x" onclick="removePreset('${c.k}',${j})">✕</span></span>`).join('')}</div>
       <div class="ps-add">
         <input type="text" id="padd_${c.k}" placeholder="Add new..." onkeydown="if(event.key==='Enter')addPreset('${c.k}')">
         <button class="btn btn-red btn-sm" onclick="addPreset('${c.k}')">Add</button>
       </div>
-    </div>${i<cats.length-1?'<hr style="border:none;border-top:1px solid var(--bdr);margin:14px 0">':''}`).join('');
-}
-async function addPreset(key){
-  const inp=document.getElementById('padd_'+key);const val=inp.value.trim();if(!val)return;
-  if(!presets[key].includes(val))presets[key].push(val);
-  await fetch(API+'/presets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({[key]:val})});
-  inp.value='';renderPresets();toast('Added.');
-}
-function removePreset(key,i){
-  presets[key].splice(i,1);
-  fetch(API+'/presets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_replace:{[key]:presets[key]}})});
-  renderPresets();
-}
+    </div>${i < cats.length - 1 ? '<hr style="border:none;border-top:1px solid var(--bdr);margin:14px 0">' : ''}`).join('');
+    }
+    async function addPreset(key) {
+      const inp = document.getElementById('padd_' + key); const val = inp.value.trim(); if (!val) return;
+      if (!presets[key].includes(val)) presets[key].push(val);
+      await fetch(API + '/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [key]: val }) });
+      inp.value = ''; renderPresets(); toast('Added.');
+    }
+    function removePreset(key, i) {
+      presets[key].splice(i, 1);
+      fetch(API + '/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ _replace: { [key]: presets[key] } }) });
+      renderPresets();
+    }
 
-// ════════════════════════════════════════════════════════════
-//  CATALOG (Programs / Modules / Lessons)
-// ════════════════════════════════════════════════════════════
-function renderCatalog(){
-  const wrap = document.getElementById('catalog-wrap');
-  const progs = catalog?.programs || [];
-  if(!progs.length){
-    wrap.innerHTML = '<div style="color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No programs yet. Add one or import from Excel.</div>';
-    return;
-  }
-  wrap.innerHTML = progs.map((p,pi)=>`
+    // ════════════════════════════════════════════════════════════
+    //  CATALOG (Programs / Modules / Lessons)
+    // ════════════════════════════════════════════════════════════
+    function renderCatalog() {
+      const wrap = document.getElementById('catalog-wrap');
+      const progs = catalog?.programs || [];
+      if (!progs.length) {
+        wrap.innerHTML = '<div style="color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No programs yet. Add one or import from Excel.</div>';
+        return;
+      }
+      wrap.innerHTML = progs.map((p, pi) => `
     <div style="border:1px solid var(--bdr);border-radius:9px;margin-bottom:10px;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#f0f4ff">
         <input value="${esc(p.name)}" onchange="renameProgram(${pi},this.value)" style="font-weight:700;font-size:.9rem;color:#1e40af;border:1px solid transparent;border-radius:5px;padding:3px 6px;background:transparent;font-family:inherit;flex:1;max-width:300px">
@@ -827,15 +1603,15 @@ function renderCatalog(){
         </div>
       </div>
       <div style="padding:8px 14px">
-        ${(p.modules||[]).map((m,mi)=>`
+        ${(p.modules || []).map((m, mi) => `
           <div style="border:1px solid var(--bdr);border-radius:7px;margin-bottom:7px;padding:8px 10px">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
               <input value="${esc(m.name)}" onchange="renameModule(${pi},${mi},this.value)" placeholder="Module name" style="font-weight:600;font-size:.84rem;border:1.5px solid var(--bdr);border-radius:5px;padding:4px 7px;font-family:inherit;flex:1">
-              <input value="${esc(m.code||'')}" onchange="moduleCode(${pi},${mi},this.value)" placeholder="Code" style="width:110px;font-size:.8rem;border:1.5px solid var(--bdr);border-radius:5px;padding:4px 7px;font-family:inherit">
+              <input value="${esc(m.code || '')}" onchange="moduleCode(${pi},${mi},this.value)" placeholder="Code" style="width:110px;font-size:.8rem;border:1.5px solid var(--bdr);border-radius:5px;padding:4px 7px;font-family:inherit">
               <button class="btn btn-danger btn-xs" onclick="delModule(${pi},${mi})">✕</button>
             </div>
             <div style="padding-left:6px">
-              ${(m.lessons||[]).map((L,li)=>`
+              ${(m.lessons || []).map((L, li) => `
                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
                   <span style="color:var(--mut);font-size:.78rem">•</span>
                   <input value="${esc(L)}" onchange="renameLesson(${pi},${mi},${li},this.value)" style="flex:1;font-size:.81rem;border:1px solid var(--bdr);border-radius:5px;padding:3px 7px;font-family:inherit">
@@ -846,192 +1622,193 @@ function renderCatalog(){
           </div>`).join('') || '<div style="color:var(--mut);font-size:.8rem;padding:4px">No modules yet</div>'}
       </div>
     </div>`).join('');
-}
-function addProgram(){ catalog.programs.push({name:'New Program',modules:[]}); saveCatalog(); renderCatalog(); }
-function renameProgram(pi,val){ catalog.programs[pi].name=val.trim(); saveCatalog(); }
-function delProgram(pi){ if(!confirm('Delete this program and all its modules?'))return; catalog.programs.splice(pi,1); saveCatalog(); renderCatalog(); }
-function addModule(pi){ catalog.programs[pi].modules=catalog.programs[pi].modules||[]; catalog.programs[pi].modules.push({name:'New Module',code:'',lessons:[]}); saveCatalog(); renderCatalog(); }
-function renameModule(pi,mi,val){ catalog.programs[pi].modules[mi].name=val.trim(); saveCatalog(); }
-function moduleCode(pi,mi,val){ catalog.programs[pi].modules[mi].code=val.trim(); saveCatalog(); }
-function delModule(pi,mi){ if(!confirm('Delete this module?'))return; catalog.programs[pi].modules.splice(mi,1); saveCatalog(); renderCatalog(); }
-function addLesson(pi,mi){ const m=catalog.programs[pi].modules[mi]; m.lessons=m.lessons||[]; m.lessons.push('New Lesson'); saveCatalog(); renderCatalog(); }
-function renameLesson(pi,mi,li,val){ catalog.programs[pi].modules[mi].lessons[li]=val.trim(); saveCatalog(); }
-function delLesson(pi,mi,li){ catalog.programs[pi].modules[mi].lessons.splice(li,1); saveCatalog(); renderCatalog(); }
-async function saveCatalog(){
-  await fetch(API+'/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({programs:catalog.programs})});
-}
-
-// ── Excel import ──
-async function importExcel(file){
-  if(!file) return;
-  const box=document.getElementById('excel-result');
-  box.style.display='block'; box.style.background='#eff6ff'; box.style.color='#1e40af';
-  box.textContent='Importing '+file.name+' ...';
-  const fd=new FormData(); fd.append('file',file);
-  try{
-    const r=await fetch(API+'/import-excel',{method:'POST',body:fd});
-    const d=await r.json();
-    if(d.ok){
-      const c=d.imported;
-      box.style.background='#f0fdf4'; box.style.color='#15803d';
-      box.innerHTML=`✅ Imported — Programs: ${c.programs}, Modules: ${c.modules}, Lessons: ${c.lessons}, Lecturers: ${c.lecturers}`;
-      // reload catalog + lecturers + presets
-      catalog=await(await fetch(API+'/catalog')).json();
-      lecturersData=await(await fetch(API+'/lecturers')).json();
-      presets=await(await fetch(API+'/presets')).json();
-      renderCatalog();
-    } else {
-      box.style.background='#fef2f2'; box.style.color='#dc2626';
-      box.textContent='❌ '+(d.error||'Import failed');
     }
-  }catch(e){
-    box.style.background='#fef2f2'; box.style.color='#dc2626';
-    box.textContent='❌ Error: '+e.message;
-  }
-}
-function downloadExcelTemplate(){
-  // Build a simple CSV the user can open in Excel and re-save as .xlsx
-  const rows=[
-    ['Program','Module','Code','Lesson','Lecturer'],
-    ['DCS 01','Object Oriented Programming','CCS20704','Introduction to OOP','Mr. Uditha Lashan'],
-    ['DCS 01','Object Oriented Programming','CCS20704','Classes and Objects','Mr. Uditha Lashan'],
-    ['DCS 01','Database Management','CCS20203','ER Diagrams','Ms. Dilini Fernando'],
-    ['DHTM 01','Introduction to Tourism','','Tourism Basics','Mr. Imal Perera']
-  ];
-  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='MSI_catalog_template.csv'; a.click();
-  toast('Sample downloaded — open in Excel, fill it, Save As .xlsx, then Import.','info');
-}
+    function addProgram() { catalog.programs.push({ name: 'New Program', modules: [] }); saveCatalog(); renderCatalog(); }
+    function renameProgram(pi, val) { catalog.programs[pi].name = val.trim(); saveCatalog(); }
+    function delProgram(pi) { if (!confirm('Delete this program and all its modules?')) return; catalog.programs.splice(pi, 1); saveCatalog(); renderCatalog(); }
+    function addModule(pi) { catalog.programs[pi].modules = catalog.programs[pi].modules || []; catalog.programs[pi].modules.push({ name: 'New Module', code: '', lessons: [] }); saveCatalog(); renderCatalog(); }
+    function renameModule(pi, mi, val) { catalog.programs[pi].modules[mi].name = val.trim(); saveCatalog(); }
+    function moduleCode(pi, mi, val) { catalog.programs[pi].modules[mi].code = val.trim(); saveCatalog(); }
+    function delModule(pi, mi) { if (!confirm('Delete this module?')) return; catalog.programs[pi].modules.splice(mi, 1); saveCatalog(); renderCatalog(); }
+    function addLesson(pi, mi) { const m = catalog.programs[pi].modules[mi]; m.lessons = m.lessons || []; m.lessons.push('New Lesson'); saveCatalog(); renderCatalog(); }
+    function renameLesson(pi, mi, li, val) { catalog.programs[pi].modules[mi].lessons[li] = val.trim(); saveCatalog(); }
+    function delLesson(pi, mi, li) { catalog.programs[pi].modules[mi].lessons.splice(li, 1); saveCatalog(); renderCatalog(); }
+    async function saveCatalog() {
+      await fetch(API + '/catalog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ programs: catalog.programs }) });
+    }
 
-// ════════════════════════════════════════════════════════════
-//  LECTURERS
-// ════════════════════════════════════════════════════════════
-function renderLecturers(){
-  const grid=document.getElementById('lecturers-grid');
-  const list=lecturersData?.lecturers||[];
-  if(!list.length){ grid.innerHTML='<div style="grid-column:1/-1;color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No lecturers yet.</div>'; return; }
-  grid.innerHTML=list.map(l=>`
+    // ── Excel import ──
+    async function importExcel(file) {
+      if (!file) return;
+      const box = document.getElementById('excel-result');
+      box.style.display = 'block'; box.style.background = '#eff6ff'; box.style.color = '#1e40af';
+      box.textContent = 'Importing ' + file.name + ' ...';
+      const fd = new FormData(); fd.append('file', file);
+      try {
+        const r = await fetch(API + '/import-excel', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.ok) {
+          const c = d.imported;
+          box.style.background = '#f0fdf4'; box.style.color = '#15803d';
+          box.innerHTML = `✅ Imported — Programs: ${c.programs}, Modules: ${c.modules}, Lessons: ${c.lessons}, Lecturers: ${c.lecturers}`;
+          // reload catalog + lecturers + presets
+          catalog = await (await fetch(API + '/catalog')).json();
+          lecturersData = await (await fetch(API + '/lecturers')).json();
+          presets = await (await fetch(API + '/presets')).json();
+          renderCatalog();
+        } else {
+          box.style.background = '#fef2f2'; box.style.color = '#dc2626';
+          box.textContent = '❌ ' + (d.error || 'Import failed');
+        }
+      } catch (e) {
+        box.style.background = '#fef2f2'; box.style.color = '#dc2626';
+        box.textContent = '❌ Error: ' + e.message;
+      }
+    }
+    function downloadExcelTemplate() {
+      // Build a simple CSV the user can open in Excel and re-save as .xlsx
+      const rows = [
+        ['Program', 'Module', 'Code', 'Lesson', 'Lecturer'],
+        ['DCS 01', 'Object Oriented Programming', 'CCS20704', 'Introduction to OOP', 'Mr. Uditha Lashan'],
+        ['DCS 01', 'Object Oriented Programming', 'CCS20704', 'Classes and Objects', 'Mr. Uditha Lashan'],
+        ['DCS 01', 'Database Management', 'CCS20203', 'ER Diagrams', 'Ms. Dilini Fernando'],
+        ['DHTM 01', 'Introduction to Tourism', '', 'Tourism Basics', 'Mr. Imal Perera']
+      ];
+      const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'MSI_catalog_template.csv'; a.click();
+      toast('Sample downloaded — open in Excel, fill it, Save As .xlsx, then Import.', 'info');
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  LECTURERS
+    // ════════════════════════════════════════════════════════════
+    function renderLecturers() {
+      const grid = document.getElementById('lecturers-grid');
+      const list = lecturersData?.lecturers || [];
+      if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;color:var(--mut);font-size:.85rem;padding:16px;text-align:center">No lecturers yet.</div>'; return; }
+      grid.innerHTML = list.map(l => `
     <div style="border:1px solid var(--bdr);border-radius:10px;padding:14px;text-align:center;position:relative">
       <button class="del-btn" style="position:absolute;top:8px;right:8px" onclick="delLecturer('${l.id}')">✕</button>
       ${l.image
-        ? `<img src="/profiles/${l.image}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--red)">`
-        : `<div style="width:72px;height:72px;border-radius:50%;background:#e2e5ea;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:1.6rem;color:#9ca3af">👤</div>`}
+          ? `<img src="/profiles/${l.image}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--red)">`
+          : `<div style="width:72px;height:72px;border-radius:50%;background:#e2e5ea;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:1.6rem;color:#9ca3af">👤</div>`}
       <div style="font-weight:600;font-size:.85rem;margin-top:8px">${esc(l.name)}</div>
       <label class="btn btn-outline btn-xs" style="position:relative;overflow:hidden;margin-top:6px;display:inline-block">
-        ${l.image?'Change Photo':'Add Photo'}
+        ${l.image ? 'Change Photo' : 'Add Photo'}
         <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="changeLecturerPhoto('${l.id}','${esc(l.name)}',this.files[0])">
       </label>
     </div>`).join('');
-}
-async function addLecturer(){
-  const name=document.getElementById('new-lec-name').value.trim();
-  if(!name){ toast('Enter lecturer name','err'); return; }
-  const fileInput=document.getElementById('new-lec-img');
-  let image='';
-  if(fileInput.files[0]){
-    const fd=new FormData(); fd.append('file',fileInput.files[0]);
-    const r=await fetch(API+'/lecturers/upload-image',{method:'POST',body:fd});
-    const d=await r.json(); if(d.ok) image=d.filename;
-  }
-  await fetch(API+'/lecturers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,image})});
-  // also add to presets so autocomplete has it
-  await fetch(API+'/presets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lecturers:name})});
-  document.getElementById('new-lec-name').value='';
-  document.getElementById('lec-img-name').textContent='No photo';
-  fileInput.value='';
-  lecturersData=await(await fetch(API+'/lecturers')).json();
-  presets=await(await fetch(API+'/presets')).json();
-  renderLecturers(); toast('✅ Lecturer added');
-}
-async function changeLecturerPhoto(id,name,file){
-  if(!file) return;
-  const fd=new FormData(); fd.append('file',file);
-  const r=await fetch(API+'/lecturers/upload-image',{method:'POST',body:fd});
-  const d=await r.json();
-  if(d.ok){
-    await fetch(API+'/lecturers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,image:d.filename})});
-    lecturersData=await(await fetch(API+'/lecturers')).json();
-    renderLecturers(); toast('✅ Photo updated');
-  }
-}
-async function delLecturer(id){
-  if(!confirm('Delete this lecturer?')) return;
-  await fetch(API+'/lecturers/delete/'+id,{method:'DELETE'});
-  lecturersData=await(await fetch(API+'/lecturers')).json();
-  renderLecturers(); toast('Deleted.');
-}
+    }
+    async function addLecturer() {
+      const name = document.getElementById('new-lec-name').value.trim();
+      if (!name) { toast('Enter lecturer name', 'err'); return; }
+      const fileInput = document.getElementById('new-lec-img');
+      let image = '';
+      if (fileInput.files[0]) {
+        const fd = new FormData(); fd.append('file', fileInput.files[0]);
+        const r = await fetch(API + '/lecturers/upload-image', { method: 'POST', body: fd });
+        const d = await r.json(); if (d.ok) image = d.filename;
+      }
+      await fetch(API + '/lecturers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, image }) });
+      // also add to presets so autocomplete has it
+      await fetch(API + '/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lecturers: name }) });
+      document.getElementById('new-lec-name').value = '';
+      document.getElementById('lec-img-name').textContent = 'No photo';
+      fileInput.value = '';
+      lecturersData = await (await fetch(API + '/lecturers')).json();
+      presets = await (await fetch(API + '/presets')).json();
+      renderLecturers(); toast('✅ Lecturer added');
+    }
+    async function changeLecturerPhoto(id, name, file) {
+      if (!file) return;
+      const fd = new FormData(); fd.append('file', file);
+      const r = await fetch(API + '/lecturers/upload-image', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (d.ok) {
+        await fetch(API + '/lecturers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, image: d.filename }) });
+        lecturersData = await (await fetch(API + '/lecturers')).json();
+        renderLecturers(); toast('✅ Photo updated');
+      }
+    }
+    async function delLecturer(id) {
+      if (!confirm('Delete this lecturer?')) return;
+      await fetch(API + '/lecturers/delete/' + id, { method: 'DELETE' });
+      lecturersData = await (await fetch(API + '/lecturers')).json();
+      renderLecturers(); toast('Deleted.');
+    }
 
-// ════════════════════════════════════════════════════════════
-//  SPECIAL MEETING
-// ════════════════════════════════════════════════════════════
-let meetingMedia = [];  // [{filename,type}]
-async function renderMeeting(){
-  const m = await (await fetch(API+'/meeting')).json();
-  document.getElementById('mtg-title').value = m.title||'';
-  document.getElementById('mtg-text').value  = m.text||'';
-  meetingMedia = m.media||[];
-  renderMeetingMedia();
-  const st=document.getElementById('meeting-status');
-  if(m.active){
-    st.style.background='#dcfce7'; st.style.color='#15803d';
-    st.textContent='🟢 Meeting mode is ON — the TV is showing the meeting screen.';
-  } else {
-    st.style.background='#f3f4f6'; st.style.color='#6b7280';
-    st.textContent='⚪ Meeting mode is OFF — the TV shows the normal timetable.';
-  }
-}
-function renderMeetingMedia(){
-  const g=document.getElementById('mtg-media-grid');
-  g.innerHTML=meetingMedia.map((m,i)=>`
+    // ════════════════════════════════════════════════════════════
+    //  SPECIAL MEETING
+    // ════════════════════════════════════════════════════════════
+    let meetingMedia = [];  // [{filename,type}]
+    async function renderMeeting() {
+      const m = await (await fetch(API + '/meeting')).json();
+      document.getElementById('mtg-title').value = m.title || '';
+      document.getElementById('mtg-text').value = m.text || '';
+      meetingMedia = m.media || [];
+      renderMeetingMedia();
+      const st = document.getElementById('meeting-status');
+      if (m.active) {
+        st.style.background = '#dcfce7'; st.style.color = '#15803d';
+        st.textContent = '🟢 Meeting mode is ON — the TV is showing the meeting screen.';
+      } else {
+        st.style.background = '#f3f4f6'; st.style.color = '#6b7280';
+        st.textContent = '⚪ Meeting mode is OFF — the TV shows the normal timetable.';
+      }
+    }
+    function renderMeetingMedia() {
+      const g = document.getElementById('mtg-media-grid');
+      g.innerHTML = meetingMedia.map((m, i) => `
     <div style="position:relative;border:1px solid var(--bdr);border-radius:8px;overflow:hidden;width:110px">
-      ${m.type==='video'?`<video src="/meeting-media/${m.filename}" muted style="width:110px;height:80px;object-fit:cover"></video>`
-        :`<img src="/meeting-media/${m.filename}" style="width:110px;height:80px;object-fit:cover">`}
+      ${m.type === 'video' ? `<video src="/meeting-media/${m.filename}" muted style="width:110px;height:80px;object-fit:cover"></video>`
+          : `<img src="/meeting-media/${m.filename}" style="width:110px;height:80px;object-fit:cover">`}
       <button class="del-btn" style="position:absolute;top:4px;right:4px;width:20px;height:20px" onclick="removeMeetingMedia(${i})">✕</button>
     </div>`).join('');
-}
-async function handleMeetingFiles(files){
-  for(let i=0;i<files.length && meetingMedia.length<3;i++){
-    const fd=new FormData(); fd.append('file',files[i]);
-    const r=await fetch(API+'/meeting/upload',{method:'POST',body:fd});
-    const d=await r.json();
-    if(d.ok) meetingMedia.push({filename:d.filename,type:d.type});
-  }
-  if(files.length>3 || meetingMedia.length>=3) toast('Max 3 files for the meeting','info');
-  renderMeetingMedia();
-}
-function removeMeetingMedia(i){ meetingMedia.splice(i,1); renderMeetingMedia(); }
-async function postMeeting(active){
-  const body={
-    active,
-    title:document.getElementById('mtg-title').value.trim(),
-    text:document.getElementById('mtg-text').value.trim(),
-    media:meetingMedia
-  };
-  await fetch(API+'/meeting',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-}
-async function activateMeeting(){
-  const title=document.getElementById('mtg-title').value.trim();
-  if(!title){ toast('Enter a meeting title','err'); return; }
-  await postMeeting(true); renderMeeting();
-  toast('📢 Meeting is now showing on the TV');
-}
-async function saveMeetingDraft(){ await postMeeting(false); renderMeeting(); toast('💾 Saved (meeting still off)'); }
-async function stopMeeting(){
-  await postMeeting(false); renderMeeting();
-  toast('⏹ Back to normal timetable view');
-}
+    }
+    async function handleMeetingFiles(files) {
+      for (let i = 0; i < files.length && meetingMedia.length < 3; i++) {
+        const fd = new FormData(); fd.append('file', files[i]);
+        const r = await fetch(API + '/meeting/upload', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.ok) meetingMedia.push({ filename: d.filename, type: d.type });
+      }
+      if (files.length > 3 || meetingMedia.length >= 3) toast('Max 3 files for the meeting', 'info');
+      renderMeetingMedia();
+    }
+    function removeMeetingMedia(i) { meetingMedia.splice(i, 1); renderMeetingMedia(); }
+    async function postMeeting(active) {
+      const body = {
+        active,
+        title: document.getElementById('mtg-title').value.trim(),
+        text: document.getElementById('mtg-text').value.trim(),
+        media: meetingMedia
+      };
+      await fetch(API + '/meeting', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    }
+    async function activateMeeting() {
+      const title = document.getElementById('mtg-title').value.trim();
+      if (!title) { toast('Enter a meeting title', 'err'); return; }
+      await postMeeting(true); renderMeeting();
+      toast('📢 Meeting is now showing on the TV');
+    }
+    async function saveMeetingDraft() { await postMeeting(false); renderMeeting(); toast('💾 Saved (meeting still off)'); }
+    async function stopMeeting() {
+      await postMeeting(false); renderMeeting();
+      toast('⏹ Back to normal timetable view');
+    }
 
 
 
-// ── Drag drop ──────────────────────────────────────────────
-const uz=document.getElementById('uzone');
-uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag')});
-uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
-uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');handleFiles(e.dataTransfer.files)});
+    // ── Drag drop ──────────────────────────────────────────────
+    const uz = document.getElementById('uzone');
+    uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag') });
+    uz.addEventListener('dragleave', () => uz.classList.remove('drag'));
+    uz.addEventListener('drop', e => { e.preventDefault(); uz.classList.remove('drag'); handleFiles(e.dataTransfer.files) });
 
-loadData();
-</script>
+    loadData();
+  </script>
 </body>
+
 </html>
